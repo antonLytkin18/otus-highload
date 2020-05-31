@@ -1,4 +1,5 @@
 .idea
 .env
-app/node_modules
-app/static/build
+node_modules
+monolith/app/static/build
+__pycache__/
