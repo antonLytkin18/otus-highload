@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<b-container>
+    <v-users-list
+            :list="{{ list }}"
+            :urls="{{ urls }}"
+            title="{{ title }}"
+    ></v-users-list>
+</b-container>
+{% endblock %}

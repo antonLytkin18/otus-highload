@@ -1,0 +1,7 @@
+flask
+flask-login
+flask-wtf
+flask-injector
+flask_mysqldb
+email_validator
+alembic

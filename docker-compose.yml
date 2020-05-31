@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - 10100:3306
+    volumes:
+      - ./db:/var/lib/mysql
+
+
+  monolith:
+    build: ./monolith
+    env_file:
+      - .env
+    volumes:
+      - ./monolith:/monolith
+    ports:
+      - 5000:5000
+    depends_on:
+      - db

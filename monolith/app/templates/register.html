@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<b-container class="w-50">
+    <v-form-registration
+            url="{{ url_for('auth.register') }}"
+            title="{{ message }}"
+    ></v-form-registration>
+</b-container>
+{% endblock %}
