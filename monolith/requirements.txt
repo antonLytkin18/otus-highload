@@ -5,3 +5,4 @@ flask-injector
 flask_mysqldb
 email_validator
 alembic
+gunicorn

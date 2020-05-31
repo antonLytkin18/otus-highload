@@ -7,5 +7,4 @@ COPY . /monolith
 WORKDIR /monolith
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-#CMD ["./entrypoint.sh"]
-CMD ["python", "app/app.py"]
+CMD /usr/local/bin/gunicorn -w 2 -b :5000 app.app:app --reload
