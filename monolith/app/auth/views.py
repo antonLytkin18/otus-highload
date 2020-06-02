@@ -1,16 +1,20 @@
-from flask import Blueprint, render_template, request, url_for, redirect
-from flask_login import login_required, logout_user
+from flask import Blueprint, render_template, request, url_for, redirect, current_app
+from flask_login import login_required, logout_user, LoginManager, current_user
 from injector import inject
 
 from app.auth.forms import AuthForm, RegistrationForm
 from app.auth.services import RegistrationService
 from app.db.models import User
+from app.db.repositories import UserRepository
 
+login_manager = LoginManager()
 auth = Blueprint('auth', __name__, url_prefix='/auth')
 
 
 @auth.route('/login', methods=['GET'])
 def login_form():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
     return render_template('login.html', form=AuthForm())
 
 
@@ -54,3 +58,14 @@ def register(service: RegistrationService):
     if errors:
         form.email.errors.append(errors)
     return {'success': success, 'errors': form.errors}
+
+
+@login_manager.user_loader
+def load_user(user_id: int):
+    repository = current_app.injector.get(UserRepository)
+    return repository.find_one(id=user_id)
+
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    return redirect(url_for('auth.login'))

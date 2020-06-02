@@ -2,8 +2,7 @@ from flask import Flask
 from flask_injector import FlaskInjector
 from flask_mysqldb import MySQL
 
-from app.auth.login_manager import login_manager
-from app.auth.views import auth
+from app.auth.views import auth, login_manager
 from app.config import Config
 from app.dependencies import configure
 from app.follower.views import follower
