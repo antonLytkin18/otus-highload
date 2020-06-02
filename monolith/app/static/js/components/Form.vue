@@ -29,7 +29,6 @@
     export default {
         props: {
             url: String,
-            backUrl: String,
             form: Object,
             submitButtonTitle: String,
         },
