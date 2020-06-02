@@ -1,12 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Highload</title>
+    <title>Social Network</title>
 </head>
 <body>
 <div id="app">
-    <b-navbar toggleable="lg" class="border-bottom box-shadow mb-4">
-        <b-navbar-brand href="/">Highload</b-navbar-brand>
+    <b-navbar
+            toggleable="lg"
+            class="border-bottom box-shadow mb-4"
+            sticky="true"
+            style="background-color: rgb(244,244,244)"
+    >
+        <b-avatar
+                class="mr-2"
+                button
+                rounded
+                :size="36"
+                @click="location.href = '{{ url_for('main.index') }}'"
+        ><b>SN</b></b-avatar>
         <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
         <b-collapse id="nav-collapse" is-nav>
             <b-navbar-nav>
@@ -17,7 +28,7 @@
                 {% if current_user.get_id() %}
                     <b-nav-item-dropdown right>
                         <template v-slot:button-content>
-                            <em>Profile</em>
+                            <b-avatar :size="24"></b-avatar>
                         </template>
                         <b-dropdown-item href="{{ url_for('auth.logout') }}">Sign Out</b-dropdown-item>
                     </b-nav-item-dropdown>

@@ -1,9 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-<b-container class="w-50">
-    <v-form-registration
-            url="{{ url_for('auth.register') }}"
-            title="{{ message }}"
-    ></v-form-registration>
-</b-container>
+    <b-container class="w-50">
+        <h1 class="text-center">Registration</h1>
+        <hr>
+        <b-alert show variant="info">Already have an account?
+            <b-link to="{{ url_for('auth.login') }}">Login</b-link>
+        </b-alert>
+        <v-form
+                url="{{ url_for('auth.register') }}"
+                :form="{{ form|form_tojson }}"
+                submit-button-title="Register"
+                @success="location.href = '{{ url_for('auth.login') }}'"
+        ></v-form>
+    </b-container>
 {% endblock %}
