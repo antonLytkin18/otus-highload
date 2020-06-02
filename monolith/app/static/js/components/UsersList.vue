@@ -44,7 +44,7 @@
                         Отправить приглашение
                     </b-button>
                     <b-button
-                            v-if="item['is_received']"
+                            v-if="item['is_received'] && !item['is_current']"
                             size="sm"
                             variant="outline-success"
                             @click="onAccept($event, index, item)"

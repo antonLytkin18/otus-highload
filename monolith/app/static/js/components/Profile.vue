@@ -41,7 +41,7 @@
         <template v-slot:footer>
             <div v-if="!item['is_friend']">
                 <b-button
-                        v-if="item['can_send']"
+                        v-if="item['can_send'] && !item['is_current']"
                         size="sm"
                         variant="success"
                         @click="onRequest($event, index, item)"
@@ -54,7 +54,7 @@
                     Отправить приглашение
                 </b-button>
                 <b-button
-                        v-if="item['is_received']"
+                        v-if="item['is_received'] && !item['is_current']"
                         size="sm"
                         variant="outline-success"
                         @click="onAccept($event, index, item)"
@@ -72,7 +72,7 @@
                 <b-icon-check-circle variant="success"></b-icon-check-circle>
                 It's you
             </small>
-            <small v-if="item['is_sent'] && !item['is_friend']" class="text-muted">
+            <small v-if="item['is_sent'] && !item['is_friend'] && !item['is_current']" class="text-muted">
                 <b-icon icon="exclamation-circle-fill" variant="warning"></b-icon>
                 Запрос отправлен
             </small>
