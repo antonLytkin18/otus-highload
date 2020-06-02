@@ -8,7 +8,7 @@ from app.config import Config
 from app.dependencies import configure
 from app.follower.views import follower
 from app.main.views import main
-from app.templates.extenstions.filters import tojson_escaped
+from app.templates.extenstions.filters import tojson_escaped, form_tojson
 
 
 def create_app():
@@ -27,6 +27,7 @@ def create_app():
 
 def register_template_filters(app):
     app.add_template_filter(tojson_escaped)
+    app.add_template_filter(form_tojson)
 
 
 def register_blueprints(app):
