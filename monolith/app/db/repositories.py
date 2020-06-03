@@ -31,7 +31,7 @@ class BaseRepository:
             data = self.fetchone(cursor)
         return self.model_class(**data) if data else False
 
-    def save(self, model) -> bool:
+    def save(self, model: Model) -> bool:
         if model.id:
             return self._update(model)
         return self._insert(model)
@@ -45,7 +45,7 @@ class BaseRepository:
             cursor.connection.commit()
         return True
 
-    def _update(self, model) -> bool:
+    def _update(self, model: Model) -> bool:
         data = model.as_dict()
         columns = ', '.join([f'{column} = %({column})s' for column in data.keys() if column != 'id'])
         with self.db.connection.cursor() as cursor:
