@@ -3,8 +3,19 @@ from typing import List
 
 from flask_login import UserMixin
 
+
 @dataclass()
-class Follower:
+class Model:
+
+    def as_dict(self):
+        return {k: v for k, v in asdict(self).items() if k not in self.get_relation_attributes()}
+
+    def get_relation_attributes(self):
+        return []
+
+
+@dataclass()
+class Follower(Model):
     id: int = None
     follower_user_id: int = None
     followed_user_id: int = None
@@ -12,7 +23,7 @@ class Follower:
 
 
 @dataclass()
-class User(UserMixin):
+class User(Model, UserMixin):
     id: int = None
     name: str = None
     last_name: str = None
@@ -24,6 +35,9 @@ class User(UserMixin):
     city: str = None
     followers: List[Follower] = field(default_factory=list)
 
+    @staticmethod
+    def get_relation_attributes():
+        return ['followers']
 
     def to_dict(self):
         as_dict = asdict(self)
