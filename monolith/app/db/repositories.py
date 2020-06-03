@@ -1,12 +1,12 @@
-from dataclasses import asdict
-
 from flask_mysqldb import MySQL
 from injector import inject
 
-from app.db.models import User, Follower
+from app.db.models import User, Follower, Model
 
 
 class BaseRepository:
+    table_name = None
+    model_class = None
 
     @inject
     def __init__(self, db: MySQL):
@@ -25,42 +25,38 @@ class BaseRepository:
         return [col[0] for col in cursor.description]
 
     def find_one(self, **kwargs):
-        columns = ' AND '.join([f'{column}=%s' for column in kwargs])
-        cur = self.db.connection.cursor()
-        cur.execute(f'SELECT * FROM {self.table_name} WHERE {columns}', kwargs.values())
-        data = self.fetchone(cur)
-        cur.close()
+        columns = ' AND '.join([f'{column}=%({column})s' for column in kwargs])
+        with self.db.connection.cursor() as cursor:
+            cursor.execute(f'SELECT * FROM {self.table_name} WHERE {columns}', kwargs)
+            data = self.fetchone(cursor)
         return self.model_class(**data) if data else False
 
     def save(self, model) -> bool:
-        cur = self.db.connection.cursor()
-        user_data = asdict(model)
-        filtered = {column: user_data[column] for column in user_data if user_data[column]}
+        if model.id:
+            return self._update(model)
+        return self._insert(model)
 
-        columns = ', '.join(filtered.keys())
-        values_prepared = ', '.join(len(filtered) * ['%s'])
+    def _insert(self, model: Model) -> bool:
+        data = {k: v for k, v in model.as_dict().items() if v is not None}
+        columns = ', '.join(data.keys())
+        values = ', '.join([f'%({column})s' for column in data.keys()])
+        with self.db.connection.cursor() as cursor:
+            cursor.execute(f'INSERT INTO {self.table_name} ({columns}) VALUES ({values})', data)
+            cursor.connection.commit()
+        return True
 
-        if filtered.get('id'):
-            values = ', '.join([f'{key} = {value}' for (key, value) in filtered.items() if key != 'id'])
-            cur.execute(f'UPDATE {self.table_name} SET {values} WHERE id = %(id)s', {'id': filtered.get('id')})
-        else:
-            cur.execute(f'INSERT INTO {self.table_name} ({columns}) VALUES ({values_prepared})', filtered.values())
-
-        cur.connection.commit()
-        cur.close()
+    def _update(self, model) -> bool:
+        data = model.as_dict()
+        columns = ', '.join([f'{column} = %({column})s' for column in data.keys() if column != 'id'])
+        with self.db.connection.cursor() as cursor:
+            cursor.execute(f'UPDATE {self.table_name} SET {columns} WHERE id = %(id)s', data)
+            cursor.connection.commit()
         return True
 
 
 class UserRepository(BaseRepository):
     table_name = 'user'
     model_class = User
-
-    def find_all(self):
-        cur = self.db.connection.cursor()
-        cur.execute('SELECT * FROM user')
-        result = [User(**data) for data in self.fetchall(cur)]
-        cur.close()
-        return result
 
 
 class FollowerRepository(BaseRepository):
