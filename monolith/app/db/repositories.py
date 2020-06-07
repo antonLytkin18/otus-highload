@@ -24,10 +24,11 @@ class BaseRepository:
     def get_columns(cursor) -> list:
         return [col[0] for col in cursor.description]
 
-    def find_one(self, **kwargs):
-        columns = ' AND '.join([f'{column}=%({column})s' for column in kwargs])
+    def find_one(self, **kwargs) -> Model:
+        where_conditions = ' AND '.join([f'{column}=%({column})s' for column in kwargs])
+        where_statement = f'WHERE {where_conditions}' if where_conditions else ''
         with self.db.connection.cursor() as cursor:
-            cursor.execute(f'SELECT * FROM {self.table_name} WHERE {columns}', kwargs)
+            cursor.execute(f'SELECT * FROM {self.table_name} {where_statement}', kwargs)
             data = self.fetchone(cursor)
         return self.model_class(**data) if data else False
 
@@ -53,81 +54,105 @@ class BaseRepository:
             cursor.connection.commit()
         return True
 
+    @staticmethod
+    def _build_select(columns: list, alias: str = None) -> str:
+        return ', '.join([f'{alias}.{column} {alias}_{column}' if alias else column for column in columns])
+
+    @classmethod
+    def _init_model_by_result(cls, result: dict, alias: str, model_cls=None) -> Model:
+        model_cls = cls.model_class if model_cls is None else model_cls
+        alias_prefix = f'{alias}_'
+        properties = {k[len(alias_prefix):]: v for k, v in result.items() if k.startswith(alias_prefix)}
+        return model_cls(**properties) if properties.get('id') is not None else None
+
 
 class UserRepository(BaseRepository):
     table_name = 'user'
     model_class = User
+    alias = 'u'
+    follower_table_name = 'follower'
+    follower_model_class = Follower
+    follower_alias = 'f'
+
+    def _build_with_follower_query(self, **kwargs):
+        properties = self.model_class.get_properties()
+        follower_properties = self.follower_model_class.get_properties()
+        where_conditions = ' AND '.join(kwargs['where']) if 'where' in kwargs else None
+        where_statement = f'WHERE {where_conditions}' if where_conditions else ''
+
+        return f'''
+            SELECT
+                {self._build_select(properties, self.alias)},
+                {self._build_select(follower_properties, self.follower_alias)}
+            FROM
+                {self.table_name} {self.alias}
+            LEFT JOIN
+                {self.follower_table_name} {self.follower_alias}
+            ON
+                (
+                    {self.alias}.id = {self.follower_alias}.follower_user_id
+                    OR {self.alias}.id = {self.follower_alias}.followed_user_id
+                )
+                AND
+                (
+                    {self.follower_alias}.follower_user_id = %(current_user_id)s
+                    OR {self.follower_alias}.followed_user_id = %(current_user_id)s
+                )
+                AND
+                    {self.alias}.id != %(current_user_id)s
+            {where_statement}
+            ORDER BY
+                {self.alias}.id ASC
+        '''
+
+    def _create_with_follower_result(self, items: list) -> dict:
+        result = {}
+        for item in items:
+            user = self._init_model_by_result(item, self.alias)
+            if not user:
+                continue
+            user = result[user.id] if user.id in result else user
+            follower = self._init_model_by_result(item, self.follower_alias, Follower)
+            if follower:
+                user.followers.append(follower)
+            result[user.id] = user
+        return result
+
+    def find_all_with_follower(self, current_user_id):
+        with self.db.connection.cursor() as cursor:
+            query = self._build_with_follower_query()
+            cursor.execute(query, {
+                'current_user_id': current_user_id,
+            })
+            items = self.fetchall(cursor)
+        return self._create_with_follower_result(items)
+
+    def find_all_with_accepted_follower(self, current_user_id):
+        with self.db.connection.cursor() as cursor:
+            query = self._build_with_follower_query(where=[
+                f'{self.follower_alias}.status = %(status)s',
+            ])
+            cursor.execute(query, {
+                'current_user_id': current_user_id,
+                'status': self.follower_model_class.STATUS_ACCEPTED,
+            })
+            items = self.fetchall(cursor)
+        return self._create_with_follower_result(items)
+
+    def find_one_with_follower(self, current_user_id: int, user_id: int) -> User:
+        with self.db.connection.cursor() as cursor:
+            query = self._build_with_follower_query(where=[
+                f'{self.alias}.id = %(user_id)s',
+            ])
+            cursor.execute(query, {
+                'current_user_id': current_user_id,
+                'user_id': user_id,
+            })
+            items = self.fetchone(cursor)
+        result = self._create_with_follower_result([items])
+        return result[user_id] if user_id in result else None
 
 
 class FollowerRepository(BaseRepository):
     table_name = 'follower'
     model_class = Follower
-
-    def get_all_by_user_id(self, id):
-        cur = self.db.connection.cursor()
-
-        cur.execute('''
-            SELECT u.*, f.follower_user_id, f.followed_user_id, f.status FROM user u
-            LEFT JOIN follower f
-            ON (u.id = f.follower_user_id OR u.id = f.followed_user_id)
-            AND (f.follower_user_id = %(id)s OR f.followed_user_id = %(id)s)
-            WHERE u.id != %(id)s
-        ''', {'id': id})
-
-        result = {}
-        for item in self.fetchall(cur):
-            user_data = {k: v for (k, v) in item.items() if k in User.__annotations__}
-            follower_data = {k: v for (k, v) in item.items() if k in Follower.__annotations__}
-            user = User(**user_data)
-            user = result.get(user.id) if user.id in result else user
-            user.followers.append(Follower(**follower_data))
-            result[user.id] = user
-
-        cur.close()
-        return result
-
-    def get_by_user_id(self, id):
-        cur = self.db.connection.cursor()
-
-        cur.execute('''
-            SELECT u.*, f.follower_user_id, f.followed_user_id, f.status FROM user u
-            INNER JOIN follower f
-            ON (u.id = f.follower_user_id OR u.id = f.followed_user_id)
-            AND (f.follower_user_id = %(id)s OR f.followed_user_id = %(id)s)
-            AND f.status = 2
-            WHERE u.id != %(id)s
-        ''', {'id': id})
-
-        result = {}
-        for item in self.fetchall(cur):
-            user_data = {k: v for (k, v) in item.items() if k in User.__annotations__}
-            follower_data = {k: v for (k, v) in item.items() if k in Follower.__annotations__}
-            user = User(**user_data)
-            user = result.get(user.id) if user.id in result else user
-            user.followers.append(Follower(**follower_data))
-            result[user.id] = user
-
-        cur.close()
-        return result
-
-    def find_one_with_follower(self, id, current_user_id):
-        cur = self.db.connection.cursor()
-
-        cur.execute('''
-            SELECT u.*, f.follower_user_id, f.followed_user_id, f.status FROM user u
-            LEFT JOIN follower f
-            ON (u.id = f.follower_user_id OR u.id = f.followed_user_id)
-            AND (f.follower_user_id = %(current_user_id)s OR f.followed_user_id = %(current_user_id)s)
-            WHERE u.id = %(id)s
-        ''', {'id': id, 'current_user_id': current_user_id})
-
-        result = {}
-        item = self.fetchone(cur)
-        user_data = {k: v for (k, v) in item.items() if k in User.__annotations__}
-        follower_data = {k: v for (k, v) in item.items() if k in Follower.__annotations__}
-        user = User(**user_data)
-        user = result.get(user.id) if user.id in result else user
-        user.followers.append(Follower(**follower_data))
-
-        cur.close()
-        return user

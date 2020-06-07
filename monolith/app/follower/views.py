@@ -13,14 +13,14 @@ follower = Blueprint('follower', __name__, url_prefix='/follower')
 @inject
 @follower.route('/<id>', methods=['GET'])
 @login_required
-def index(id, repository: UserRepository, follower_repository: FollowerRepository):
+def index(id, repository: UserRepository):
     user = repository.find_one(id=id)
     if not user:
         abort(404)
 
-    current_user_id = current_user.get_id()
-    user = follower_repository.find_one_with_follower(id, current_user_id)
-    followers = follower_repository.get_by_user_id(id)
+    current_user_id = current_user.id
+    user = repository.find_one_with_follower(current_user_id, int(id))
+    followers = repository.find_all_with_accepted_follower(current_user_id)
     return render_template(
         'profile.html',
         title='Profile',
@@ -57,9 +57,9 @@ def index(id, repository: UserRepository, follower_repository: FollowerRepositor
 @inject
 @follower.route('/list', methods=['GET'])
 @login_required
-def list(follower_repository: FollowerRepository):
+def list(repositiry: UserRepository):
     id = current_user.get_id()
-    list = follower_repository.get_by_user_id(id)
+    list = repositiry.find_all_with_accepted_follower(int(id))
     return render_template(
         'users-list.html',
         title='People',
@@ -85,10 +85,10 @@ def list(follower_repository: FollowerRepository):
 @inject
 @follower.route('/list/all', methods=['GET', 'POST'])
 @login_required
-def list_all(follower_repository: FollowerRepository):
+def list_all(user_repository: UserRepository):
     if not request.is_json:
         id = current_user.get_id()
-        list = follower_repository.get_all_by_user_id(id)
+        list = user_repository.find_all_with_follower(id)
         return render_template(
             'users-list.html',
             title='People',
