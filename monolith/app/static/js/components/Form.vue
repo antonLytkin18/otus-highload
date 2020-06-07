@@ -6,7 +6,10 @@
                     <li v-for="error in errors">{{ error }}</li>
                 </ul>
             </div>
-            <b-form-group v-for="(field, index) in form" :label="field['label']" :label-for="field['id']">
+            <b-form-group v-for="(field, index) in form" :label-for="field['id']">
+                <template v-slot:label>
+                    {{ field['label'] }} <span v-if="field['required']" class="text-danger">*</span>
+                </template>
                 <b-form-input
                         :ref="index"
                         :id="field['id']"
