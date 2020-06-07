@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<b-container>
+    <h3>{{ title }}</h3>
+    <hr>
+    <v-follower-list
+            :list="{{ list|tojson_escaped }}"
+            follower-url="{{ url_for('follower.index', user_id=':id') }}"
+            send-url="{{ url_for('follower.send', user_id=':id') }}"
+            accept-url="{{ url_for('follower.accept', user_id=':id') }}"
+    ></v-follower-list>
+</b-container>
+{% endblock %}

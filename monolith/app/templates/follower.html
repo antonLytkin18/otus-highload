@@ -3,14 +3,12 @@
 <b-container>
     <h3>{{ item.name }} {{ item.last_name }}</h3>
     <hr>
-    <v-profile
+    <v-follower
             :item="{{ item|tojson_escaped }}"
             :followers="{{ followers|tojson_escaped }}"
-            :urls="{{ {
-                'request': url_for('follower.add'),
-                'accept': url_for('follower.accept'),
-                'profile': url_for('follower.index', user_id=':id')
-            } }}"
-    ></v-profile>
+            follower-url="{{ url_for('follower.index', user_id=':id') }}"
+            send-url="{{ url_for('follower.send', user_id=':id') }}"
+            accept-url="{{ url_for('follower.accept', user_id=':id') }}"
+    ></v-follower>
 </b-container>
 {% endblock %}
