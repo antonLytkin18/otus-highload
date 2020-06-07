@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field, asdict
 from typing import List
 
+from MySQLdb import Date
 from flask_login import UserMixin
 
 
@@ -8,7 +9,7 @@ from flask_login import UserMixin
 class Model:
 
     def as_dict(self):
-        return {k: v for k, v in asdict(self).items() if k not in self.get_related_properties()}
+        return {k: v.__str__() for k, v in asdict(self).items() if k not in self.get_related_properties()}
 
     @classmethod
     def get_properties(cls):
@@ -55,7 +56,7 @@ class User(Model, UserMixin):
     last_name: str = None
     email: str = None
     password: str = None
-    age: int = None
+    birth_date: Date = None
     gender: str = None
     interests: str = None
     city: str = None

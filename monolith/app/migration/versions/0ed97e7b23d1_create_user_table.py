@@ -23,7 +23,7 @@ def upgrade():
             name VARCHAR (32) NOT NULL,
             last_name VARCHAR (32) NOT NULL,
             email VARCHAR(128) NOT NULL,
-            age TINYINT UNSIGNED NOT NULL,
+            birth_date DATE NOT NULL,
             password VARCHAR(128) NOT NULL,
             gender CHAR (1) NOT NULL DEFAULT '',
             interests TEXT NULL,

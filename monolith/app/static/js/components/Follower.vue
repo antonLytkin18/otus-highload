@@ -16,7 +16,7 @@
                         </b-col>
                         <b-col cols="11">
                             {{ item['name'] }}
-                            <div>Age: {{ item['age'] }}</div>
+                            <div>Birth Date: {{ item['birth_date'] }}</div>
                             <div>City: {{ item['city'] }}</div>
                         </b-col>
                     </b-row>

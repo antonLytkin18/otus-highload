@@ -1,5 +1,5 @@
-from wtforms import IntegerField, StringField, PasswordField, Form, validators
-from wtforms.fields.html5 import EmailField
+from wtforms import StringField, PasswordField, Form, validators
+from wtforms.fields.html5 import EmailField, DateField
 from wtforms.validators import EqualTo
 
 
@@ -9,7 +9,7 @@ class RegistrationForm(Form):
     email = StringField(validators=[validators.email()])
     password = PasswordField('Password', validators=[validators.required(), EqualTo('confirm_password')])
     confirm_password = PasswordField('Confirm Password')
-    age = IntegerField(validators=[validators.required()])
+    birth_date = DateField('Birth Date', validators=[validators.required()])
     interests = StringField()
     city = StringField(validators=[validators.required()])
 
@@ -17,7 +17,7 @@ class RegistrationForm(Form):
 class AuthForm(Form):
     email = EmailField(
         'Enter e-mail',
-        validators=[validators.email()],
+        validators=[validators.email(), validators.required()],
         render_kw={'placeholder': 'E-mail'}
     )
     password = PasswordField(

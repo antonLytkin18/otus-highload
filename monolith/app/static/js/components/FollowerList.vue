@@ -21,7 +21,7 @@
                                 @click="onProfileClick($event, item['id'])"
                         >{{ item['name'] }}
                         </b-link>
-                        <div>Age: {{ item['age'] }}</div>
+                        <div>Birth Date: {{ item['birth_date'] }}</div>
                         <div>City: {{ item['city'] }}</div>
                     </b-col>
                 </b-row>
