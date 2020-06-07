@@ -8,14 +8,23 @@ from flask_login import UserMixin
 class Model:
 
     def as_dict(self):
-        return {k: v for k, v in asdict(self).items() if k not in self.get_relation_attributes()}
+        return {k: v for k, v in asdict(self).items() if k not in self.get_relation_properties()}
 
-    def get_relation_attributes(self):
+    @classmethod
+    def get_properties(cls):
+        return [v for v in cls.__annotations__ if v not in cls.get_relation_properties()]
+
+    @staticmethod
+    def get_relation_properties():
         return []
 
 
 @dataclass()
 class Follower(Model):
+
+    STATUS_SENT = 1
+    STATUS_ACCEPTED = 2
+
     id: int = None
     follower_user_id: int = None
     followed_user_id: int = None
@@ -36,7 +45,7 @@ class User(Model, UserMixin):
     followers: List[Follower] = field(default_factory=list)
 
     @staticmethod
-    def get_relation_attributes():
+    def get_relation_properties():
         return ['followers']
 
     def to_dict(self):
