@@ -6,4 +6,4 @@ main = Blueprint('main', __name__, url_prefix='/')
 @main.route('/')
 @login_required
 def index():
-    return redirect(url_for('follower.index', id=current_user.get_id()))
+    return redirect(url_for('follower.index', user_id=current_user.get_id()))

@@ -1,5 +1,3 @@
-import json
-
 from flask import Blueprint, abort, render_template, url_for, request
 from flask_login import login_required, current_user
 from injector import inject
@@ -11,104 +9,44 @@ follower = Blueprint('follower', __name__, url_prefix='/follower')
 
 
 @inject
-@follower.route('/<id>', methods=['GET'])
+@follower.route('/<user_id>', methods=['GET'])
 @login_required
-def index(id, repository: UserRepository):
-    user = repository.find_one(id=id)
+def index(user_id, repository: UserRepository):
+    user = repository.find_one_with_follower(current_user.id, int(user_id))
     if not user:
         abort(404)
 
-    current_user_id = current_user.id
-    user = repository.find_one_with_follower(current_user_id, int(id))
-    followers = repository.find_all_with_accepted_follower(current_user_id)
+    users = repository.find_all_with_follower(user.id, accepted=True)
     return render_template(
         'profile.html',
         title='Profile',
-        item={
-            'id': user.id,
-            'name': user.name,
-            'last_name': user.last_name,
-            'age': user.age,
-            'city': user.city,
-            'is_sent': user.is_request_sent(current_user_id),
-            'is_received': user.is_request_received(current_user_id),
-            'can_send': user.can_send(current_user_id),
-            'is_friend': user.is_friend(current_user_id),
-            'is_current': user.is_current(current_user_id)
-        },
-        followers=[{
-            'id': v.id,
-            'name': v.name,
-            'age': v.age,
-            'city': v.city,
-            'is_sent': v.is_request_sent(id),
-            'is_received': v.is_request_received(id),
-            'can_send': v.can_send(id),
-            'is_friend': v.is_friend(id)
-        } for (k, v) in followers.items()],
-        urls={
-            'request': url_for('follower.add'),
-            'accept': url_for('follower.accept'),
-            'profile': url_for('follower.index', id=':id')
-        }
+        item=user.get_info(current_user.id),
+        followers=[v.get_info(user_id) for k, v in users.items()],
     )
 
 
 @inject
 @follower.route('/list', methods=['GET'])
 @login_required
-def list(repositiry: UserRepository):
-    id = current_user.get_id()
-    list = repositiry.find_all_with_accepted_follower(int(id))
+def list_accepted(repository: UserRepository):
+    users = repository.find_all_with_follower(current_user.id, accepted=True)
     return render_template(
         'users-list.html',
         title='People',
-        list=json.dumps([{
-            'id': v.id,
-            'name': v.name,
-            'age': v.age,
-            'city': v.city,
-            'is_sent': v.is_request_sent(id),
-            'is_received': v.is_request_received(id),
-            'can_send': v.can_send(id),
-            'is_friend': v.is_friend(id),
-            'is_current': v.is_current(id)
-        } for (k, v) in list.items()]),
-        urls=json.dumps({
-            'request': url_for('follower.add'),
-            'accept': url_for('follower.accept'),
-            'profile': url_for('follower.index', id=':id')
-        })
+        list=[v.get_info(current_user.id) for k, v in users.items()],
     )
 
 
 @inject
-@follower.route('/list/all', methods=['GET', 'POST'])
+@follower.route('/list/all', methods=['GET'])
 @login_required
 def list_all(user_repository: UserRepository):
-    if not request.is_json:
-        id = current_user.get_id()
-        list = user_repository.find_all_with_follower(id)
-        return render_template(
-            'users-list.html',
-            title='People',
-            list=json.dumps([{
-                'id': v.id,
-                'name': v.name,
-                'age': v.age,
-                'city': v.city,
-                'is_sent': v.is_request_sent(id),
-                'is_received': v.is_request_received(id),
-                'can_send': v.can_send(id),
-                'is_friend': v.is_friend(id),
-                'is_current': v.is_current(id)
-            } for (k, v) in list.items()]),
-            urls=json.dumps({
-                'request': url_for('follower.add'),
-                'accept': url_for('follower.accept'),
-                'profile': url_for('follower.index', id=':id')
-            })
-        )
+    users = user_repository.find_all_with_follower(current_user.id)
+    return render_template(
+        'users-list.html',
+        title='People',
+        list=[v.get_info(current_user.id) for k, v in users.items()],
+    )
 
 
 @inject

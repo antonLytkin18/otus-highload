@@ -2,8 +2,12 @@
 {% block content %}
 <b-container>
     <v-users-list
-            :list="{{ list }}"
-            :urls="{{ urls }}"
+            :list="{{ list|tojson_escaped }}"
+            :urls="{{ {
+                'request': url_for('follower.add'),
+                'accept': url_for('follower.accept'),
+                'profile': url_for('follower.index', user_id=':id')
+            } }}"
             title="{{ title }}"
     ></v-users-list>
 </b-container>

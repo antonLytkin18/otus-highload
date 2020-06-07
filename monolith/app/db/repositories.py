@@ -118,32 +118,23 @@ class UserRepository(BaseRepository):
             result[user.id] = user
         return result
 
-    def find_all_with_follower(self, current_user_id):
+    def find_all_with_follower(self, current_user_id, accepted: bool = False) -> dict:
+        conditions = []
+        search_params = {'current_user_id': current_user_id}
+        if accepted:
+            conditions.append(f'{self.follower_alias}.status = %(status)s')
+            search_params['status'] = self.follower_model_class.STATUS_ACCEPTED
+        query = self._build_with_follower_query(where=conditions)
         with self.db.connection.cursor() as cursor:
-            query = self._build_with_follower_query()
-            cursor.execute(query, {
-                'current_user_id': current_user_id,
-            })
-            items = self.fetchall(cursor)
-        return self._create_with_follower_result(items)
-
-    def find_all_with_accepted_follower(self, current_user_id):
-        with self.db.connection.cursor() as cursor:
-            query = self._build_with_follower_query(where=[
-                f'{self.follower_alias}.status = %(status)s',
-            ])
-            cursor.execute(query, {
-                'current_user_id': current_user_id,
-                'status': self.follower_model_class.STATUS_ACCEPTED,
-            })
+            cursor.execute(query, search_params)
             items = self.fetchall(cursor)
         return self._create_with_follower_result(items)
 
     def find_one_with_follower(self, current_user_id: int, user_id: int) -> User:
+        query = self._build_with_follower_query(where=[
+            f'{self.alias}.id = %(user_id)s',
+        ])
         with self.db.connection.cursor() as cursor:
-            query = self._build_with_follower_query(where=[
-                f'{self.alias}.id = %(user_id)s',
-            ])
             cursor.execute(query, {
                 'current_user_id': current_user_id,
                 'user_id': user_id,

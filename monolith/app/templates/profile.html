@@ -6,7 +6,11 @@
     <v-profile
             :item="{{ item|tojson_escaped }}"
             :followers="{{ followers|tojson_escaped }}"
-            :urls="{{ urls|tojson_escaped }}"
+            :urls="{{ {
+                'request': url_for('follower.add'),
+                'accept': url_for('follower.accept'),
+                'profile': url_for('follower.index', user_id=':id')
+            } }}"
     ></v-profile>
 </b-container>
 {% endblock %}
