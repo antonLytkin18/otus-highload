@@ -9,7 +9,13 @@ from flask_login import UserMixin
 class Model:
 
     def as_dict(self):
-        return {k: v.__str__() for k, v in asdict(self).items() if k not in self.get_related_properties()}
+        return {k: self._format_value(v) for k, v in asdict(self).items() if k not in self.get_related_properties()}
+
+    @staticmethod
+    def _format_value(value):
+        if isinstance(value, Date):
+            return value.__str__()
+        return value
 
     @classmethod
     def get_properties(cls):
