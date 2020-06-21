@@ -98,6 +98,19 @@ class UserRepository(BaseRepository):
         from_clause = kwargs.get('subquery') or self.table_name
         where = kwargs.get('where', [])
         where_statement = f"WHERE {' AND '.join(where)}" if where else ''
+        on_clause = f'''
+            (
+                {self.alias}.id = {self.follower_alias}.follower_user_id
+                OR {self.alias}.id = {self.follower_alias}.followed_user_id
+            )
+            AND
+            (
+                {self.follower_alias}.follower_user_id = %(current_user_id)s
+                OR {self.follower_alias}.followed_user_id = %(current_user_id)s
+            )
+            AND
+                {self.alias}.id != %(current_user_id)s
+        '''
         limit = kwargs.get('limit')
         limit_statement = self._build_limit_statement(limit, kwargs.get('offset')) if limit is not None else ''
 
@@ -105,18 +118,7 @@ class UserRepository(BaseRepository):
             SELECT {select_clause}
             FROM {from_clause} {self.alias}
             LEFT JOIN {self.follower_table_name} {self.follower_alias}
-            ON
-                (
-                    {self.alias}.id = {self.follower_alias}.follower_user_id
-                    OR {self.alias}.id = {self.follower_alias}.followed_user_id
-                )
-                AND
-                (
-                    {self.follower_alias}.follower_user_id = %(current_user_id)s
-                    OR {self.follower_alias}.followed_user_id = %(current_user_id)s
-                )
-                AND
-                    {self.alias}.id != %(current_user_id)s
+            ON {on_clause}
             {where_statement}
             ORDER BY {self.alias}.id ASC
             {limit_statement}
