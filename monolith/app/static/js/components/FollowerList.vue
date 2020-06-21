@@ -36,10 +36,12 @@
                 ></v-follower-actions>
             </template>
         </b-card>
-        <b-pagination v-if="pagination"
+        <b-pagination
+                v-if="pagination"
                 v-model="pagination['page']"
                 :total-rows="pagination['count']"
                 :per-page="pagination['per_page']"
+                class="pagination-container"
                 @change="onPageChange"
         ></b-pagination>
     </div>
@@ -78,4 +80,19 @@
         font-weight: bold;
         font-size: 18px;
     }
+
+    .pagination-container {
+        margin-top: 20px;
+    }
+
+    .pagination-container /deep/ > .page-item .page-link {
+        color: #6c757d;
+    }
+
+    .pagination-container /deep/ > .page-item.active .page-link {
+        background-color: rgba(0, 0, 0, 0.5);
+        border-color: #ffffff;
+        color: #ffffff;
+    }
+
 </style>
