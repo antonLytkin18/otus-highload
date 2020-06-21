@@ -36,6 +36,12 @@
                 ></v-follower-actions>
             </template>
         </b-card>
+        <b-pagination v-if="pagination"
+                v-model="pagination['page']"
+                :total-rows="pagination['count']"
+                :per-page="pagination['per_page']"
+                @change="onPageChange"
+        ></b-pagination>
     </div>
 </template>
 
@@ -44,8 +50,10 @@
         props: {
             list: Object | Array,
             followerUrl: String,
+            followersUrl: String,
             sendUrl: String,
             acceptUrl: String,
+            pagination: Object,
         },
         methods: {
             onSend: function (e, item) {
@@ -57,6 +65,9 @@
             onProfileClick: function (e, id) {
                 window.open(this.populateUrl(this.followerUrl, {id: id}), '_blank');
             },
+            onPageChange: function (page) {
+                window.open(this.populateUrl(this.followersUrl, {page: page}), '_self');
+            }
         }
     }
 </script>

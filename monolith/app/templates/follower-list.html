@@ -6,8 +6,12 @@
     <v-follower-list
             :list="{{ list|tojson_escaped }}"
             follower-url="{{ url_for('follower.index', user_id=':id') }}"
+            followers-url="{{ url_for(request.endpoint, page=':page') }}"
             send-url="{{ url_for('follower.send', user_id=':id') }}"
             accept-url="{{ url_for('follower.accept', user_id=':id') }}"
+            {% if pagination %}
+                :pagination="{{ pagination }}"
+            {% endif %}
     ></v-follower-list>
 </b-container>
 {% endblock %}

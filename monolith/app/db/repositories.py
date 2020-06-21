@@ -179,7 +179,7 @@ class UserRepository(BaseRepository):
         )
         return self._create_with_follower_result(items)
 
-    def find_all_with_follower_paginate(self, current_user_id, accepted: bool = False, limit=10, page=1) -> Pagination:
+    def paginate_all_with_follower(self, current_user_id, accepted: bool = False, limit=10, page=1) -> Pagination:
         offset = (page - 1) * limit
         items = self.find_all_with_follower(current_user_id, accepted, limit=limit, offset=offset)
         count = self.count_all_with_follower(current_user_id, accepted)
