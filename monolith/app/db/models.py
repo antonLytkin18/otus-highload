@@ -71,7 +71,7 @@ class User(Model, UserMixin):
     def get_follower(self) -> Follower:
         if not self.followers:
             return None
-        follower, = self.followers
+        follower, *_ = self.followers
         return follower
 
     def get_info(self, user_id) -> dict:
