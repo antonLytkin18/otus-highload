@@ -6,3 +6,4 @@ flask_mysqldb
 email_validator
 alembic
 gunicorn
+Faker

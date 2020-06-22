@@ -3,6 +3,7 @@ from flask_injector import FlaskInjector
 from flask_mysqldb import MySQL
 
 from app.auth.views import auth, login_manager
+from app.cmd.user import user_cmd
 from app.config import Config
 from app.dependencies import configure
 from app.follower.views import follower
@@ -33,3 +34,4 @@ def register_blueprints(app):
     app.register_blueprint(main)
     app.register_blueprint(auth)
     app.register_blueprint(follower)
+    app.register_blueprint(user_cmd)
