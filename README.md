@@ -1,13 +1,13 @@
 # Social Network
 
-# Run
+## Run
 ````shell script
 $ cp .env.exapmple .env
 $ docker-compose up -d
 $ docker-compose exec monolith alembic upgrade head
 ````
 
-# Deploy to GCP
+## Deploy to GCP
 ````shell script
 $ export GOOGLE_PROJECT=[name]
 $ docker-machine create --driver google \
@@ -19,7 +19,7 @@ $ eval $(docker-machine env monolith)
 $ docker-compose up -d
 ````
 
-# Generate users
+## Generate users
 ````shell script
 $ flask user generate [count]
 ````
