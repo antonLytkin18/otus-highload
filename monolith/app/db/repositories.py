@@ -76,17 +76,35 @@ class BaseRepository:
 class UserRepository(BaseRepository):
     table_name = 'user'
     model_class = User
+
+
+class FollowerRepository(BaseRepository):
+    table_name = 'follower'
+    model_class = Follower
+
+
+class UserFollowerRepository(BaseRepository):
+    table_name = 'user'
+    model_class = User
     alias = 'u'
     follower_table_name = 'follower'
     follower_model_class = Follower
     follower_alias = 'f'
+
+    @inject
+    def __init__(self, db: MySQL, current_user: User):
+        super().__init__(db)
+        self.current_user = current_user
+
+    def set_current_user(self, current_user: User):
+        self.current_user = current_user
 
     def _build_subquery(self, **kwargs):
         limit = kwargs.get('limit')
         limit_statement = self._build_limit_statement(limit, kwargs.get('offset')) if limit else ''
         return f'(SELECT * FROM {self.table_name} {limit_statement})'
 
-    def _build_with_follower_query(self, **kwargs):
+    def _build_query(self, **kwargs):
         if kwargs.get('select_count', False):
             select_clause = f'COUNT(DISTINCT {self.alias}.id) cnt'
         else:
@@ -124,83 +142,92 @@ class UserRepository(BaseRepository):
             {limit_statement}
         '''
 
-    def _create_with_follower_result(self, items: list) -> dict:
-        result = {}
-        for item in items:
-            user = self._init_model_by_result(item, self.alias)
-            if not user:
-                continue
-            user = result[user.id] if user.id in result else user
-            follower = self._init_model_by_result(item, self.follower_alias, Follower)
-            if follower:
-                user.followers.append(follower)
-            result[user.id] = user
-        return result
-
-    def _find_all_with_follower_items(self, current_user_id, accepted: bool = False, **kwargs) -> list:
+    def _create_query(self, **kwargs):
         conditions = []
-        search_params = {'current_user_id': current_user_id}
+        search_params = {'current_user_id': self.current_user.id}
+        select_count = kwargs.get('select_count', False)
+        accepted = kwargs.get('accepted', False)
+        user_id = kwargs.get('user_id')
+        name_like = kwargs.get('name_like')
+        last_name_like = kwargs.get('last_name_like')
+        limit = kwargs.get('limit')
+        offset = kwargs.get('offset')
+        subquery = None
+
         if accepted:
             conditions.append(f'{self.follower_alias}.status = %(status)s')
             search_params['status'] = self.follower_model_class.STATUS_ACCEPTED
-            query = self._build_with_follower_query(
-                select_count=kwargs.get('select_count'),
-                where=conditions,
-                limit=kwargs.get('limit'),
-                offset=kwargs.get('offset'),
-            )
-        else:
-            query = self._build_with_follower_query(
-                select_count=kwargs.get('select_count'),
-                subquery=self._build_subquery(
-                    limit=kwargs.get('limit'),
-                    offset=kwargs.get('offset'),
-                ),
-                where=conditions,
-            )
+
+        if user_id:
+            conditions.append(f'{self.alias}.id = %(user_id)s')
+            search_params['user_id'] = user_id
+
+        if name_like:
+            conditions.append(f'{self.alias}.name LIKE %(name_like)s')
+            search_params['name_like'] = name_like + '%'
+            if last_name_like:
+                conditions.append(f'{self.alias}.last_name LIKE %(last_name_like)s')
+                search_params['last_name_like'] = last_name_like + '%'
+
+        if not conditions:
+            subquery = self._build_subquery(limit=limit, offset=offset)
+            limit = offset = None
+
+        if select_count:
+            limit = offset = None
+
+        query = self._build_query(
+            select_count=select_count,
+            subquery=subquery,
+            where=conditions,
+            limit=limit,
+            offset=offset,
+        )
+        return query, search_params
+
+    def _create_result(self, items: list) -> dict:
+        result = {}
+        for item in items:
+            model = self._init_model_by_result(item, self.alias)
+            if not model:
+                continue
+            model = result[model.id] if model.id in result else model
+            follower = self._init_model_by_result(item, self.follower_alias, Follower)
+            if follower:
+                model.followers.append(follower)
+            result[model.id] = model
+        return result
+
+    def _find_one_item(self, **kwargs):
+        query, search_params = self._create_query(**kwargs)
+        with self.db.connection.cursor() as cursor:
+            cursor.execute(query, search_params)
+            return self.fetchone(cursor)
+
+    def _find_all_items(self, **kwargs):
+        query, search_params = self._create_query(**kwargs)
         with self.db.connection.cursor() as cursor:
             cursor.execute(query, search_params)
             return self.fetchall(cursor)
 
-    def count_all_with_follower(self, current_user_id, accepted: bool = False, **kwargs) -> int:
-        item, *_ = self._find_all_with_follower_items(
-            current_user_id,
-            accepted,
-            select_count=True,
-            limit=kwargs.get('limit'),
-            offset=kwargs.get('offset'),
-        )
+    def find_one(self, **kwargs) -> User:
+        item = self._find_one_item(**kwargs)
+        result = self._create_result([item])
+        if not result:
+            return None
+        model, *_ = result.values()
+        return model
+
+    def find_all(self, **kwargs) -> dict:
+        items = self._find_all_items(**kwargs)
+        return self._create_result(items)
+
+    def count_all(self, **kwargs) -> int:
+        item = self._find_one_item(select_count=True, **kwargs)
         return int(item['cnt']) if 'cnt' in item else 0
 
-    def find_all_with_follower(self, current_user_id, accepted: bool = False, **kwargs) -> dict:
-        items = self._find_all_with_follower_items(
-            current_user_id,
-            accepted,
-            limit=kwargs.get('limit'),
-            offset=kwargs.get('offset')
-        )
-        return self._create_with_follower_result(items)
-
-    def paginate_all_with_follower(self, current_user_id, accepted: bool = False, limit=10, page=1) -> Pagination:
+    def paginate_all(self, limit=10, page=1, **kwargs) -> Pagination:
         offset = (page - 1) * limit
-        items = self.find_all_with_follower(current_user_id, accepted, limit=limit, offset=offset)
-        count = self.count_all_with_follower(current_user_id, accepted)
+        items = self.find_all(limit=limit, offset=offset, **kwargs)
+        count = self.count_all(**kwargs)
         return Pagination(per_page=limit, page=page, count=count, list=items)
-
-    def find_one_with_follower(self, current_user_id: int, user_id: int) -> User:
-        query = self._build_with_follower_query(where=[
-            f'{self.alias}.id = %(user_id)s',
-        ])
-        with self.db.connection.cursor() as cursor:
-            cursor.execute(query, {
-                'current_user_id': current_user_id,
-                'user_id': user_id,
-            })
-            items = self.fetchone(cursor)
-        result = self._create_with_follower_result([items])
-        return result[user_id] if user_id in result else None
-
-
-class FollowerRepository(BaseRepository):
-    table_name = 'follower'
-    model_class = Follower
