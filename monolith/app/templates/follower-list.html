@@ -5,6 +5,7 @@
     <hr>
     {% if form %}
         <v-filter-form
+                url="{{ url_for('follower.list_all') }}"
                 :form="{{ form|form_tojson }}"
                 submit-button-title="Filter"
         ></v-filter-form>

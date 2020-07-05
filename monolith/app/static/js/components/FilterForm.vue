@@ -1,7 +1,7 @@
 <template>
     <div>
         <b-card class="mb-3">
-            <b-form id="filter-form">
+            <b-form id="filter-form" :action="url">
                 <b-input-group v-for="(field, index) in form" :label-for="field['id']" class="mb-2">
                     <template v-slot:prepend>
                         <b-input-group-text>{{ field['label'] }}</b-input-group-text>
@@ -33,6 +33,7 @@
 <script>
     export default {
         props: {
+            url: String,
             form: Object,
             submitButtonTitle: String,
         },
