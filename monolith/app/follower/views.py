@@ -22,7 +22,7 @@ def index(user_id, repository: UserFollowerRepository):
         abort(404)
 
     users = repository.find_all(
-        current_user_id=current_user.id,
+        current_user_id=user.id,
         accepted=True
     )
     return render_template(
