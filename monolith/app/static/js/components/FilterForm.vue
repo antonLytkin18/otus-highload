@@ -23,7 +23,9 @@
                         form="filter-form"
                         size="sm"
                         variant="outline-secondary"
-                >{{ submitButtonTitle || 'Submit' }}
+                >
+                    <b-icon icon="search"></b-icon>
+                    {{ submitButtonTitle || 'Submit' }}
                 </b-button>
             </template>
         </b-card>

@@ -7,8 +7,9 @@
         <v-filter-form
                 url="{{ url_for('follower.list_all') }}"
                 :form="{{ form|form_tojson }}"
-                submit-button-title="Filter"
+                submit-button-title="Find"
         ></v-filter-form>
+        <hr>
     {% endif %}
     <v-follower-list
             :list="{{ list|tojson_escaped }}"
