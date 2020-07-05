@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, render_template
+from flask import Blueprint, abort, render_template, request
 from flask_login import login_required, current_user
 from injector import inject
 
@@ -13,12 +13,17 @@ follower = Blueprint('follower', __name__, url_prefix='/follower')
 @follower.route('/<user_id>', methods=['GET'])
 @login_required
 def index(user_id, repository: UserFollowerRepository):
-    repository.set_current_user(current_user)
-    user = repository.find_one(user_id=int(user_id))
+    user = repository.find_one(
+        current_user_id=current_user.id,
+        user_id=int(user_id)
+    )
     if not user:
         abort(404)
 
-    users = repository.find_all(accepted=True)
+    users = repository.find_all(
+        current_user_id=current_user.id,
+        accepted=True
+    )
     return render_template(
         'follower.html',
         item=user.get_info(current_user.id),
@@ -31,8 +36,8 @@ def index(user_id, repository: UserFollowerRepository):
 @follower.route('/list/<page>', methods=['GET'])
 @login_required
 def list_accepted(page, repository: UserFollowerRepository):
-    repository.set_current_user(current_user)
     pagination = repository.paginate_all(
+        current_user_id=current_user.id,
         accepted=True,
         limit=10,
         page=int(page)
@@ -50,8 +55,10 @@ def list_accepted(page, repository: UserFollowerRepository):
 @follower.route('/list/all/<page>', methods=['GET'])
 @login_required
 def list_all(page, repository: UserFollowerRepository):
-    repository.set_current_user(current_user)
     pagination = repository.paginate_all(
+        current_user_id=current_user.id,
+        last_name_like=request.args.get('last_name_like'),
+        name_like=request.args.get('name_like'),
         limit=10,
         page=int(page)
     )

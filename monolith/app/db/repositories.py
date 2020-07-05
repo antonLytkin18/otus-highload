@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 from flask_mysqldb import MySQL
 from injector import inject
 
@@ -5,7 +7,7 @@ from app.db.models import User, Follower, Model
 from app.db.utils import Pagination
 
 
-class BaseRepository:
+class BaseRepository(ABC):
     table_name = None
     model_class = None
 
@@ -25,6 +27,29 @@ class BaseRepository:
     def get_columns(cursor) -> list:
         return [col[0] for col in cursor.description]
 
+    @abstractmethod
+    def find_one(self, **kwargs) -> Model:
+        pass
+
+    @abstractmethod
+    def find_all(self, **kwargs) -> list:
+        pass
+
+    @abstractmethod
+    def count_all(self, **kwargs) -> int:
+        pass
+
+    @abstractmethod
+    def paginate_all(self, limit=10, page=1, **kwargs) -> Pagination:
+        pass
+
+    @abstractmethod
+    def save(self, model: Model) -> bool:
+        pass
+
+
+class CommonRepository(BaseRepository):
+
     def find_one(self, **kwargs) -> Model:
         where_conditions = ' AND '.join([f'{column}=%({column})s' for column in kwargs])
         where_statement = f'WHERE {where_conditions}' if where_conditions else ''
@@ -32,6 +57,15 @@ class BaseRepository:
             cursor.execute(f'SELECT * FROM {self.table_name} {where_statement}', kwargs)
             data = self.fetchone(cursor)
         return self.model_class(**data) if data else False
+
+    def find_all(self, **kwargs) -> list:
+        pass
+
+    def paginate_all(self, limit=10, page=1, **kwargs) -> Pagination:
+        pass
+
+    def count_all(self, **kwargs) -> int:
+        pass
 
     def save(self, model: Model) -> bool:
         if model.id:
@@ -55,30 +89,13 @@ class BaseRepository:
             cursor.connection.commit()
         return True
 
-    @staticmethod
-    def _build_select_clause(columns: list, alias: str = None) -> str:
-        return ', '.join([f'{alias}.{column} {alias}_{column}' if alias else column for column in columns])
 
-    @staticmethod
-    def _build_limit_statement(limit: int, offset: int = None) -> str:
-        limit_statement = f'LIMIT {limit}'
-        limit_statement += f' OFFSET {offset}' if offset else ''
-        return limit_statement
-
-    @classmethod
-    def _init_model_by_result(cls, result: dict, alias: str, model_cls=None) -> Model:
-        model_cls = cls.model_class if model_cls is None else model_cls
-        alias_prefix = f'{alias}_'
-        properties = {k[len(alias_prefix):]: v for k, v in result.items() if k.startswith(alias_prefix)}
-        return model_cls(**properties) if properties.get('id') is not None else None
-
-
-class UserRepository(BaseRepository):
+class UserRepository(CommonRepository):
     table_name = 'user'
     model_class = User
 
 
-class FollowerRepository(BaseRepository):
+class FollowerRepository(CommonRepository):
     table_name = 'follower'
     model_class = Follower
 
@@ -90,32 +107,43 @@ class UserFollowerRepository(BaseRepository):
     follower_table_name = 'follower'
     follower_model_class = Follower
     follower_alias = 'f'
+    count_alias = 'cnt'
 
-    @inject
-    def __init__(self, db: MySQL, current_user: User):
-        super().__init__(db)
-        self.current_user = current_user
+    @classmethod
+    def _init_model_by_result(cls, result: dict, alias: str, model_cls=None) -> Model:
+        model_cls = cls.model_class if model_cls is None else model_cls
+        alias_prefix = f'{alias}_'
+        properties = {k[len(alias_prefix):]: v for k, v in result.items() if k.startswith(alias_prefix)}
+        return model_cls(**properties) if properties.get('id') is not None else None
 
-    def set_current_user(self, current_user: User):
-        self.current_user = current_user
+    @staticmethod
+    def _build_select_clause(columns: list, alias: str = None) -> str:
+        return ', '.join([f'{alias}.{column} {alias}_{column}' if alias else column for column in columns])
+
+    @staticmethod
+    def _build_limit_statement(limit: int, offset: int = None) -> str:
+        if not limit:
+            return ''
+        limit_statement = f'LIMIT {limit}'
+        limit_statement += f' OFFSET {offset}' if offset else ''
+        return limit_statement
 
     def _build_subquery(self, **kwargs):
         limit = kwargs.get('limit')
-        limit_statement = self._build_limit_statement(limit, kwargs.get('offset')) if limit else ''
+        limit_statement = self._build_limit_statement(limit, kwargs.get('offset'))
         return f'(SELECT * FROM {self.table_name} {limit_statement})'
 
     def _build_query(self, **kwargs):
         if kwargs.get('select_count', False):
-            select_clause = f'COUNT(DISTINCT {self.alias}.id) cnt'
+            select_clause = f'COUNT(DISTINCT {self.alias}.id) {self.count_alias}'
         else:
             select_clause = f'''
                 {self._build_select_clause(self.model_class.get_properties(), self.alias)},
                 {self._build_select_clause(self.follower_model_class.get_properties(), self.follower_alias)}
 
             '''
-        from_clause = kwargs.get('subquery') or self.table_name
-        where = kwargs.get('where', [])
-        where_statement = f"WHERE {' AND '.join(where)}" if where else ''
+
+        from_clause = self.table_name
         on_clause = f'''
             (
                 {self.alias}.id = {self.follower_alias}.follower_user_id
@@ -129,8 +157,14 @@ class UserFollowerRepository(BaseRepository):
             AND
                 {self.alias}.id != %(current_user_id)s
         '''
-        limit = kwargs.get('limit')
-        limit_statement = self._build_limit_statement(limit, kwargs.get('offset')) if limit is not None else ''
+
+        where_statement = limit_statement = ''
+        conditions = kwargs.get('conditions', [])
+        if conditions:
+            where_statement = f"WHERE {' AND '.join(conditions)}"
+            limit_statement = self._build_limit_statement(kwargs.get('limit'), kwargs.get('offset'))
+        else:
+            from_clause = self._build_subquery(limit=kwargs.get('limit'), offset=kwargs.get('offset'))
 
         return f'''
             SELECT {select_clause}
@@ -142,19 +176,12 @@ class UserFollowerRepository(BaseRepository):
             {limit_statement}
         '''
 
-    def _create_query(self, **kwargs):
+    def _create_query(self, current_user_id: int, **kwargs):
         conditions = []
-        search_params = {'current_user_id': self.current_user.id}
-        select_count = kwargs.get('select_count', False)
-        accepted = kwargs.get('accepted', False)
+        search_params = {'current_user_id': current_user_id}
         user_id = kwargs.get('user_id')
-        name_like = kwargs.get('name_like')
-        last_name_like = kwargs.get('last_name_like')
-        limit = kwargs.get('limit')
-        offset = kwargs.get('offset')
-        subquery = None
 
-        if accepted:
+        if kwargs.get('accepted', False):
             conditions.append(f'{self.follower_alias}.status = %(status)s')
             search_params['status'] = self.follower_model_class.STATUS_ACCEPTED
 
@@ -162,26 +189,21 @@ class UserFollowerRepository(BaseRepository):
             conditions.append(f'{self.alias}.id = %(user_id)s')
             search_params['user_id'] = user_id
 
+        last_name_like = kwargs.get('last_name_like')
+        if last_name_like:
+            conditions.append(f'{self.alias}.last_name LIKE %(last_name_like)s')
+            search_params['last_name_like'] = last_name_like + '%'
+
+        name_like = kwargs.get('name_like')
         if name_like:
             conditions.append(f'{self.alias}.name LIKE %(name_like)s')
             search_params['name_like'] = name_like + '%'
-            if last_name_like:
-                conditions.append(f'{self.alias}.last_name LIKE %(last_name_like)s')
-                search_params['last_name_like'] = last_name_like + '%'
-
-        if not conditions:
-            subquery = self._build_subquery(limit=limit, offset=offset)
-            limit = offset = None
-
-        if select_count:
-            limit = offset = None
 
         query = self._build_query(
-            select_count=select_count,
-            subquery=subquery,
-            where=conditions,
-            limit=limit,
-            offset=offset,
+            select_count=kwargs.get('select_count', False),
+            conditions=conditions,
+            limit=kwargs.get('limit'),
+            offset=kwargs.get('offset'),
         )
         return query, search_params
 
@@ -224,10 +246,13 @@ class UserFollowerRepository(BaseRepository):
 
     def count_all(self, **kwargs) -> int:
         item = self._find_one_item(select_count=True, **kwargs)
-        return int(item['cnt']) if 'cnt' in item else 0
+        return int(item[self.count_alias]) if self.count_alias in item else 0
 
     def paginate_all(self, limit=10, page=1, **kwargs) -> Pagination:
         offset = (page - 1) * limit
         items = self.find_all(limit=limit, offset=offset, **kwargs)
         count = self.count_all(**kwargs)
         return Pagination(per_page=limit, page=page, count=count, list=items)
+
+    def save(self, model: Model) -> bool:
+        pass
