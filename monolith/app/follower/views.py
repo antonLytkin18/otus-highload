@@ -4,6 +4,7 @@ from injector import inject
 
 from app.db.repositories import UserRepository, UserFollowerRepository
 from app.follower.exceptions import FollowerAlreadyExistsException, FollowerDoesNotExistsException
+from app.follower.forms import FilterForm
 from app.follower.services import FollowerService
 
 follower = Blueprint('follower', __name__, url_prefix='/follower')
@@ -55,6 +56,7 @@ def list_accepted(page, repository: UserFollowerRepository):
 @follower.route('/list/all/<page>', methods=['GET'])
 @login_required
 def list_all(page, repository: UserFollowerRepository):
+    filter_form = FilterForm(data=request.args.to_dict())
     pagination = repository.paginate_all(
         current_user_id=current_user.id,
         last_name_like=request.args.get('last_name_like'),
@@ -67,6 +69,7 @@ def list_all(page, repository: UserFollowerRepository):
         title='Profiles',
         list=[v.get_info(current_user.id) for k, v in pagination.list.items()],
         pagination=pagination.get_params(),
+        form=filter_form,
     )
 
 

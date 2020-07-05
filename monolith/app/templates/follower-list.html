@@ -3,6 +3,12 @@
 <b-container>
     <h3>{{ title }}</h3>
     <hr>
+    {% if form %}
+        <v-filter-form
+                :form="{{ form|form_tojson }}"
+                submit-button-title="Filter"
+        ></v-filter-form>
+    {% endif %}
     <v-follower-list
             :list="{{ list|tojson_escaped }}"
             follower-url="{{ url_for('follower.index', user_id=':id') }}"
