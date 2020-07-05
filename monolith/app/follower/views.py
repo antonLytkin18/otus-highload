@@ -59,8 +59,8 @@ def list_all(page, repository: UserFollowerRepository):
     filter_form = FilterForm(data=request.args.to_dict())
     pagination = repository.paginate_all(
         current_user_id=current_user.id,
-        last_name_like=request.args.get('last_name_like'),
-        name_like=request.args.get('name_like'),
+        last_name_like=filter_form.last_name_like.data,
+        name_like=filter_form.name_like.data,
         limit=10,
         page=int(page)
     )
