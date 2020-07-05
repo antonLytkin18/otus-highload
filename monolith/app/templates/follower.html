@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <b-container>
-    <h3>{{ item.name }} {{ item.last_name }}</h3>
+    <h3>{{ item.last_name }} {{ item.name }}</h3>
     <hr>
     <v-follower
             :item="{{ item|tojson_escaped }}"

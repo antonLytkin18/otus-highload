@@ -19,7 +19,7 @@
                         <b-link
                                 class="follower-link"
                                 @click="onProfileClick($event, item['id'])"
-                        >{{ item['name'] }}
+                        >{{item['last_name']}} {{ item['name'] }}
                         </b-link>
                         <div>Birth Date: {{ item['birth_date'] }}</div>
                         <div>City: {{ item['city'] }}</div>
