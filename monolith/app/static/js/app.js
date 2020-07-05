@@ -4,6 +4,7 @@ import urlMixin from "./mixins/urlMixin.js";
 
 Vue.mixin(urlMixin);
 Vue.component('v-form', require('./components/Form.vue').default);
+Vue.component('v-filter-form', require('./components/FilterForm.vue').default);
 Vue.component('v-follower', require('./components/Follower.vue').default);
 Vue.component('v-follower-list', require('./components/FollowerList.vue').default);
 Vue.component('v-follower-actions', require('./components/FollowerActions.vue').default);
