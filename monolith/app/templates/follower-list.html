@@ -14,7 +14,12 @@
     <v-follower-list
             :list="{{ list|tojson_escaped }}"
             follower-url="{{ url_for('follower.index', user_id=':id') }}"
-            followers-url="{{ url_for(request.endpoint, page=':page') }}"
+            {% if request.query_string %}
+                followers-url="{{ url_for(request.endpoint, page=':page') }}?{{ request.query_string.decode('utf-8') }}"
+            {% else %}
+                followers-url="{{ url_for(request.endpoint, page=':page') }}"
+            {% endif %}
+
             send-url="{{ url_for('follower.send', user_id=':id') }}"
             accept-url="{{ url_for('follower.accept', user_id=':id') }}"
             {% if pagination %}
