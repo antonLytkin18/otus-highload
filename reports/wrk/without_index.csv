@@ -1,0 +1,5 @@
+Connections,Latency AVG [sec],Throughput [Requests/sec]
+1,1530,0.57
+10,6070,1.23
+100,15200,1.23
+1000,19430,1.08
