@@ -1,0 +1,61 @@
+wrk -t1 -c1 -d60 --timeout 30s --latency -H 'Cookie: session=.eJwlzjsOwjAMANC7ZGaIU8efXgbZji1YWzoh7g4S7wTv3e515Plo--u48tbuz9X2limuqORWhVmDqGTDDNhUeKJLj1A3MbDOyQxLBAzYYAD1YiBaHpOxkLqPUDCaW9iAPkZPjcVzumsJhnc3U0w2khmcqertF7nOPP4baJ8v3Nsvqw.XwS0pQ.wEdu4AzYcdpt_W5SsFSlodTDB_U' http://35.241.149.215:5000/follower/list/all?last_name_like=Ly&name_like=Me
+
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   308.26ms  601.01ms   3.96s    90.97%
+    Req/Sec     5.73      2.58    10.00     66.40%
+  Latency Distribution
+     50%  100.51ms
+     75%  117.81ms
+     90%  819.67ms
+     99%    3.48s
+  250 requests in 1.00m, 2.02MB read
+Requests/sec:      4.16
+Transfer/sec:     34.38KB
+
+wrk -t8 -c10 -d60 --timeout 30s --latency -H 'Cookie: session=.eJwlzjsOwjAMANC7ZGaIU8efXgbZji1YWzoh7g4S7wTv3e515Plo--u48tbuz9X2limuqORWhVmDqGTDDNhUeKJLj1A3MbDOyQxLBAzYYAD1YiBaHpOxkLqPUDCaW9iAPkZPjcVzumsJhnc3U0w2khmcqertF7nOPP4baJ8v3Nsvqw.XwS0pQ.wEdu4AzYcdpt_W5SsFSlodTDB_U' http://35.241.149.215:5000/follower/list/all?last_name_like=Ly&name_like=Me
+
+  8 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.02s     4.52s   18.87s    86.52%
+    Req/Sec     5.92      2.44    10.00     67.59%
+  Latency Distribution
+     50%  102.67ms
+     75%  153.84ms
+     90%    9.57s
+     99%   18.10s
+  1626 requests in 1.00m, 13.11MB read
+  Socket errors: connect 0, read 3, write 0, timeout 0
+Requests/sec:     27.06
+Transfer/sec:    223.35KB
+
+wrk -t8 -c100 -d60 --timeout 30s --latency -H 'Cookie: session=.eJwlzjsOwjAMANC7ZGaIU8efXgbZji1YWzoh7g4S7wTv3e515Plo--u48tbuz9X2limuqORWhVmDqGTDDNhUeKJLj1A3MbDOyQxLBAzYYAD1YiBaHpOxkLqPUDCaW9iAPkZPjcVzumsJhnc3U0w2khmcqertF7nOPP4baJ8v3Nsvqw.XwS0pQ.wEdu4AzYcdpt_W5SsFSlodTDB_U' http://35.241.149.215:5000/follower/list/all?last_name_like=Ly&name_like=Me
+
+  8 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.36s   138.70ms   2.41s    92.01%
+    Req/Sec    16.46     14.55    70.00     77.85%
+  Latency Distribution
+     50%    1.39s
+     75%    1.40s
+     90%    1.42s
+     99%    1.51s
+  3930 requests in 1.00m, 31.68MB read
+Requests/sec:     65.46
+Transfer/sec:    540.36KB
+
+wrk -t8 -c1000 -d60 --timeout 30s --latency -H 'Cookie: session=.eJwlzjsOwjAMANC7ZGaIU8efXgbZji1YWzoh7g4S7wTv3e515Plo--u48tbuz9X2limuqORWhVmDqGTDDNhUeKJLj1A3MbDOyQxLBAzYYAD1YiBaHpOxkLqPUDCaW9iAPkZPjcVzumsJhnc3U0w2khmcqertF7nOPP4baJ8v3Nsvqw.XwS0pQ.wEdu4AzYcdpt_W5SsFSlodTDB_U' http://35.241.149.215:5000/follower/list/all?last_name_like=Ly&name_like=Me
+
+  8 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.35s     5.04s   29.03s    82.66%
+    Req/Sec     9.44      9.20   101.00     77.72%
+  Latency Distribution
+     50%    4.59s
+     75%    7.63s
+     90%   15.19s
+     99%   22.66s
+  1614 requests in 1.00m, 13.02MB read
+  Socket errors: connect 0, read 111, write 104808, timeout 11
+Requests/sec:     26.86
+Transfer/sec:    221.85KB
