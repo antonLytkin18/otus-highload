@@ -23,3 +23,6 @@ $ docker-compose up -d
 ````shell script
 $ flask user generate [count]
 ````
+
+## WRK Report
+Available at the following [link](https://github.com/antonLytkin18/otus-highload/blob/master/reports/wrk/wrk.ipynb)
