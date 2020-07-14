@@ -9,6 +9,13 @@ class Config:
     WTF_CSRF_CHECK_DEFAULT = os.environ.get('WTF_CSRF_CHECK_DEFAULT')
 
     MYSQL_HOST = os.environ.get('MYSQL_HOST')
+    MYSQL_PORT = int(os.environ.get('MYSQL_PORT', 3306))
     MYSQL_USER = os.environ.get('MYSQL_USER')
     MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD')
     MYSQL_DB = os.environ.get('MYSQL_DB')
+
+    SLAVE_MYSQL_HOST = os.environ.get('SLAVE_MYSQL_HOST')
+    SLAVE_MYSQL_PORT = int(os.environ.get('SLAVE_MYSQL_PORT', 3306))
+    SLAVE_MYSQL_USER = os.environ.get('SLAVE_MYSQL_USER')
+    SLAVE_MYSQL_PASSWORD = os.environ.get('SLAVE_MYSQL_PASSWORD')
+    SLAVE_MYSQL_DB = os.environ.get('SLAVE_MYSQL_DB')
