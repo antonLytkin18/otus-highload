@@ -1,10 +1,10 @@
 from flask import Flask
 from flask_injector import FlaskInjector
-from flask_mysqldb import MySQL
 
 from app.auth.views import auth, login_manager
 from app.cmd.user import user_cmd
 from app.config import Config
+from app.db.db import MySqlPool
 from app.dependencies import configure
 from app.follower.views import follower
 from app.main.views import main
@@ -19,7 +19,7 @@ def create_app():
     register_template_filters(app)
     injector = FlaskInjector(app=app, modules=[configure])
     app.injector = injector.injector
-    db = app.injector.get(MySQL)
+    db = app.injector.get(MySqlPool)
     db.init_app(app)
 
     return app
