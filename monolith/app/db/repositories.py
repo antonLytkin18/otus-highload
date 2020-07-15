@@ -265,4 +265,4 @@ class UserFollowerReadOnlyRepository(UserFollowerRepository):
         super().__init__(db)
 
     def save(self, model: Model) -> bool:
-        raise Exception('Cannot save in read-only repository')
+        raise Exception('Cannot make write operations in read-only repository')
