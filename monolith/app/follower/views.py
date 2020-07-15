@@ -2,7 +2,7 @@ from flask import Blueprint, abort, render_template, request
 from flask_login import login_required, current_user
 from injector import inject
 
-from app.db.repositories import UserRepository, UserFollowerRepository
+from app.db.repositories import UserRepository, UserFollowerRepository, UserFollowerReadOnlyRepository
 from app.follower.exceptions import FollowerAlreadyExistsException, FollowerDoesNotExistsException
 from app.follower.forms import FilterForm
 from app.follower.services import FollowerService
@@ -36,7 +36,7 @@ def index(user_id, repository: UserFollowerRepository):
 @follower.route('/list', defaults={'page': 1}, methods=['GET'])
 @follower.route('/list/<page>', methods=['GET'])
 @login_required
-def list_accepted(page, repository: UserFollowerRepository):
+def list_accepted(page, repository: UserFollowerReadOnlyRepository):
     pagination = repository.paginate_all(
         current_user_id=current_user.id,
         accepted=True,
@@ -55,7 +55,7 @@ def list_accepted(page, repository: UserFollowerRepository):
 @follower.route('/list/all', defaults={'page': 1}, methods=['GET'])
 @follower.route('/list/all/<page>', methods=['GET'])
 @login_required
-def list_all(page, repository: UserFollowerRepository):
+def list_all(page, repository: UserFollowerReadOnlyRepository):
     filter_form = FilterForm(data=request.args.to_dict())
     pagination = repository.paginate_all(
         current_user_id=current_user.id,
