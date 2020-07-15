@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 
-from flask_mysqldb import MySQL
 from injector import inject
 
+from app.db.db import SlaveDb, MySqlPool
 from app.db.models import User, Follower, Model
 from app.db.utils import Pagination
 
@@ -12,7 +12,7 @@ class BaseRepository(ABC):
     model_class = None
 
     @inject
-    def __init__(self, db: MySQL):
+    def __init__(self, db: MySqlPool):
         self.db = db
 
     def fetchone(self, cursor) -> dict:
@@ -256,3 +256,13 @@ class UserFollowerRepository(BaseRepository):
 
     def save(self, model: Model) -> bool:
         pass
+
+
+class UserFollowerReadOnlyRepository(UserFollowerRepository):
+
+    @inject
+    def __init__(self, db: SlaveDb):
+        super().__init__(db)
+
+    def save(self, model: Model) -> bool:
+        raise Exception('Cannot save in read-only repository')
