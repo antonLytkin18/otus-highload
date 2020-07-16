@@ -1,8 +1,8 @@
 version: '3'
 
 services:
-  db:
-    build: db
+  db_slave:
+    build: db-slave
     restart: always
     environment:
       MYSQL_USER: ${MYSQL_USER}
@@ -10,18 +10,6 @@ services:
       MYSQL_DATABASE: ${MYSQL_DB}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
-      - 10100:3306
+      - 10101:3306
     volumes:
-      - ./db/volume:/var/lib/mysql
-
-
-  monolith:
-    build: ./monolith
-    env_file:
-      - .env
-    volumes:
-      - ./monolith:/monolith
-    ports:
-      - 5000:5000
-    depends_on:
-      - db
+      - ./db-slave/volume:/var/lib/mysql
