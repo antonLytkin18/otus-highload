@@ -1,5 +1,8 @@
 .idea
 .env
+dump
+volume
 node_modules
 monolith/app/static/build
+.ipynb_checkpoints
 __pycache__/
