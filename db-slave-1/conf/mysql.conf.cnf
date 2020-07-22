@@ -1,0 +1,13 @@
+[mysqld]
+
+skip-host-cache
+skip-name-resolve
+
+server-id=3
+log_bin=/var/log/mysql/mysql-bin.log
+relay-log=/var/log/mysql/mysql-relay-bin.log
+binlog_format=ROW
+binlog_do_db=app
+gtid_mode=ON
+enforce_gtid_consistency=ON
+log-slave-updates=ON
