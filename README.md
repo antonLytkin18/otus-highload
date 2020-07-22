@@ -65,8 +65,42 @@ MASTER_HOST='34.78.37.195',
 MASTER_PORT=10100,
 MASTER_USER='root',
 MASTER_PASSWORD='password',
-MASTER_LOG_FILE = 'mysql-bin.000001',
+MASTER_LOG_FILE='mysql-bin.000001',
 MASTER_LOG_POS=0;
 
 START SLAVE;
+````
+
+## Master-Slave Semisynchronous Replication
+Install semi-sync plugin for master:
+````shell script
+docker-compose exec db mysql -uroot -p \
+  -e "INSTALL PLUGIN rpl_semi_sync_master SONAME 'semisync_master.so';"
+````
+
+Install semi-sync plugins for slaves:
+````shell script
+docker-compose -f docker-compose-replication.yml exec db_slave mysql -uroot -p \
+  -e "INSTALL PLUGIN rpl_semi_sync_slave SONAME 'semisync_slave.so';"
+
+docker-compose -f docker-compose-replication.yml exec db_slave_1 mysql -uroot -p \
+  -e "INSTALL PLUGIN rpl_semi_sync_slave SONAME 'semisync_slave.so';"
+````
+
+Enable semi-sync replication on master and show the result:
+````shell script
+docker-compose exec db mysql -uroot -p \
+  -e "SET GLOBAL rpl_semi_sync_master_enabled = 1;" \
+  -e "SHOW VARIABLES LIKE 'rpl_semi_sync%';"
+````
+
+Enable semi-sync replication on slaves and show the result:
+````shell script
+docker-compose -f docker-compose-replication.yml exec db_slave mysql -uroot -p \
+  -e "SET GLOBAL rpl_semi_sync_slave_enabled = 1;" \
+  -e "SHOW VARIABLES LIKE 'rpl_semi_sync%';"
+
+docker-compose -f docker-compose-replication.yml exec db_slave_1 mysql -uroot -p \
+  -e "SET GLOBAL rpl_semi_sync_slave_enabled = 1;" \
+  -e "SHOW VARIABLES LIKE 'rpl_semi_sync%';"
 ````
