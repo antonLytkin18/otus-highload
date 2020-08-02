@@ -85,6 +85,10 @@ class CommonRepository(BaseRepository):
         values = ', '.join([f'%({column})s' for column in data.keys()])
         with self.db.connection.cursor() as cursor:
             cursor.execute(f'INSERT INTO {self.table_name} ({columns}) VALUES ({values})', data)
+            cursor.execute('SELECT LAST_INSERT_ID()')
+            last_id_result = self.fetchone(cursor)
+            last_id, *_ = list(last_id_result.values())
+            model.id = last_id
             cursor.connection.commit()
         return True
 
