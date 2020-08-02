@@ -6,6 +6,7 @@ from app.cmd.user import user_cmd
 from app.config import Config
 from app.db.db import MySqlPool
 from app.dependencies import configure
+from app.chat.views import chat
 from app.follower.views import follower
 from app.main.views import main
 from app.templates.extenstions.filters import tojson_escaped, form_tojson
@@ -35,3 +36,4 @@ def register_blueprints(app):
     app.register_blueprint(auth)
     app.register_blueprint(follower)
     app.register_blueprint(user_cmd)
+    app.register_blueprint(chat)
