@@ -51,10 +51,12 @@ class BaseRepository(ABC):
 class CommonRepository(BaseRepository):
 
     def find_one(self, **kwargs) -> Model:
+        order_by_clause = kwargs.pop('order_by', False)
+        order_statement = f'ORDER BY {order_by_clause}' if order_by_clause else ''
         where_conditions = ' AND '.join([f'{column}=%({column})s' for column in kwargs])
         where_statement = f'WHERE {where_conditions}' if where_conditions else ''
         with self.db.connection.cursor() as cursor:
-            cursor.execute(f'SELECT * FROM {self.table_name} {where_statement}', kwargs)
+            cursor.execute(f'SELECT * FROM {self.table_name} {where_statement} {order_statement}', kwargs)
             data = self.fetchone(cursor)
         return self.model_class(**data) if data else False
 
