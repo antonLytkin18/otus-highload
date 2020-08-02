@@ -23,6 +23,7 @@
             <b-navbar-nav>
                 <b-nav-item href="{{ url_for('follower.list_all') }}">Profiles</b-nav-item>
                 <b-nav-item href="{{ url_for('follower.list_accepted') }}">Followers</b-nav-item>
+                <b-nav-item href="{{ url_for('chat.index') }}">Chats</b-nav-item>
             </b-navbar-nav>
             <b-navbar-nav class="ml-auto">
                 {% if current_user.get_id() %}
