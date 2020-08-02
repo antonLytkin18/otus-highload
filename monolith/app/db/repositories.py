@@ -61,7 +61,12 @@ class CommonRepository(BaseRepository):
         return self.model_class(**data) if data else False
 
     def find_all(self, **kwargs) -> list:
-        pass
+        where_conditions = ' AND '.join([f'{column}=%({column})s' for column in kwargs])
+        where_statement = f'WHERE {where_conditions}' if where_conditions else ''
+        with self.db.connection.cursor() as cursor:
+            cursor.execute(f'SELECT * FROM {self.table_name} {where_statement}', kwargs)
+            data = self.fetchall(cursor)
+        return [self.model_class(**item) for item in data]
 
     def paginate_all(self, limit=10, page=1, **kwargs) -> Pagination:
         pass
