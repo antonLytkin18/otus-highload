@@ -36,7 +36,7 @@ def index(user_id, repository: UserFollowerRepository):
 @follower.route('/list', defaults={'page': 1}, methods=['GET'])
 @follower.route('/list/<page>', methods=['GET'])
 @login_required
-def list_accepted(page, repository: UserFollowerReadOnlyRepository):
+def list_accepted(page, repository: UserFollowerRepository):
     pagination = repository.paginate_all(
         current_user_id=current_user.id,
         accepted=True,
@@ -55,7 +55,7 @@ def list_accepted(page, repository: UserFollowerReadOnlyRepository):
 @follower.route('/list/all', defaults={'page': 1}, methods=['GET'])
 @follower.route('/list/all/<page>', methods=['GET'])
 @login_required
-def list_all(page, repository: UserFollowerReadOnlyRepository):
+def list_all(page, repository: UserFollowerRepository):
     filter_form = FilterForm(data=request.args.to_dict())
     pagination = repository.paginate_all(
         current_user_id=current_user.id,
