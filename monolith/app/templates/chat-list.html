@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<b-container>
+    <h3>Chats</h3>
+    <hr>
+    <v-chat-list
+            :follower-list="{{ follower_list|tojson_escaped }}"
+            :chat-list="{{ chat_list|tojson_escaped }}"
+            chat-message-list-url="{{ url_for('chat.message_list', user_id=':id') }}"
+    ></v-chat-list>
+</b-container>
+{% endblock %}
