@@ -88,7 +88,7 @@ class ChatService:
         users_cached = {}
         messages = self.chat_message_repository.find_all(chat_id=chat_id)
         for message in messages:
-            user = users_cached.get(user_id, False)
+            user = users_cached.get(message.user_id, False)
             if not user:
                 user = self.user_repository.find_one(id=message.user_id)
                 users_cached[user.id] = user
