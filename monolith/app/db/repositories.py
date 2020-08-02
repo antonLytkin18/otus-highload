@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from injector import inject
 
 from app.db.db import SlaveDb, MySqlPool
-from app.db.models import User, Follower, Model
+from app.db.models import User, Follower, Model, Chat, ChatMessage
 from app.db.utils import Pagination
 
 
@@ -277,3 +277,13 @@ class UserFollowerReadOnlyRepository(UserFollowerRepository):
 
     def save(self, model: Model) -> bool:
         raise Exception('Cannot make write operations in read-only repository')
+
+
+class ChatRepository(CommonRepository):
+    table_name = 'chat'
+    model_class = Chat
+
+
+class ChatMessageRepository(CommonRepository):
+    table_name = 'chat_message'
+    model_class = ChatMessage
