@@ -2,6 +2,7 @@ from dataclasses import dataclass, field, asdict
 from typing import List
 
 from MySQLdb import Date
+from MySQLdb.times import DateTimeType
 from flask_login import UserMixin
 
 
@@ -88,3 +89,20 @@ class User(Model, UserMixin):
     @staticmethod
     def get_related_properties():
         return ['followers']
+
+
+@dataclass()
+class Chat(Model):
+    id: int = None
+    from_user_id: int = None
+    to_user_id: int = None
+    date_create: DateTimeType = None
+
+
+@dataclass()
+class ChatMessage(Model):
+    id: int = None
+    user_id: int = None
+    chat_id: int = None
+    message: str = None
+    date_create: DateTimeType = None
