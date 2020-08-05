@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from injector import inject
 
-from app.db.db import SlaveDb, MySqlPool
+from app.db.db import SlaveDb, MySqlPool, ChatShardedDb
 from app.db.models import User, Follower, Model, Chat, ChatMessage
 from app.db.utils import Pagination
 
@@ -287,3 +287,9 @@ class ChatRepository(CommonRepository):
 class ChatMessageRepository(CommonRepository):
     table_name = 'chat_message'
     model_class = ChatMessage
+
+
+class ChatMessageShardedRepository(ChatMessageRepository):
+    @inject
+    def __init__(self, db: ChatShardedDb):
+        super().__init__(db)
