@@ -4,7 +4,7 @@ from datetime import datetime
 from injector import inject
 
 from app.db.models import Chat, ChatMessage
-from app.db.repositories import ChatRepository, ChatMessageRepository, UserRepository
+from app.db.repositories import ChatRepository, UserRepository, ChatMessageShardedRepository
 
 
 @dataclass()
@@ -28,7 +28,7 @@ class ChatService:
 
     @inject
     def __init__(self, user_repository: UserRepository, chat_repository: ChatRepository,
-                 chat_message_repository: ChatMessageRepository
+                 chat_message_repository: ChatMessageShardedRepository
                  ):
         self.user_repository = user_repository
         self.chat_repository = chat_repository
