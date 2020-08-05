@@ -49,3 +49,7 @@ class Db(MySqlPool):
 
 class SlaveDb(MySqlPool):
     config_prefix = 'SLAVE_'
+
+
+class ChatShardedDb(MySqlPool):
+    config_prefix = 'CHAT_'

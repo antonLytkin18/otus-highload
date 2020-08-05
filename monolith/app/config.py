@@ -19,3 +19,9 @@ class Config:
     SLAVE_MYSQL_USER = os.environ.get('SLAVE_MYSQL_USER')
     SLAVE_MYSQL_PASSWORD = os.environ.get('SLAVE_MYSQL_PASSWORD')
     SLAVE_MYSQL_DB = os.environ.get('SLAVE_MYSQL_DB')
+
+    CHAT_MYSQL_HOST = os.environ.get('CHAT_MYSQL_HOST')
+    CHAT_MYSQL_PORT = int(os.environ.get('CHAT_MYSQL_PORT', 3306))
+    CHAT_MYSQL_USER = os.environ.get('CHAT_MYSQL_USER')
+    CHAT_MYSQL_PASSWORD = os.environ.get('CHAT_MYSQL_PASSWORD')
+    CHAT_MYSQL_DB = os.environ.get('CHAT_MYSQL_DB')
