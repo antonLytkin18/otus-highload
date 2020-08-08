@@ -28,6 +28,8 @@ $ flask user generate [count]
 Available at the following [link](https://github.com/antonLytkin18/otus-highload/blob/master/reports/wrk/wrk.ipynb)
 
 ## Master-Slave Replication
+<details>
+<summary>Click to expand</summary>
 ````shell script
 $ export GOOGLE_PROJECT=[name]
 $ docker-machine create --driver google \
@@ -70,8 +72,11 @@ MASTER_LOG_POS=0;
 
 START SLAVE;
 ````
+</details>
 
 ## Master-Slave Semisynchronous Replication
+<details>
+<summary>Click to expand</summary>
 Install semi-sync plugin for master:
 ````shell script
 docker-compose exec db mysql -uroot -p \
@@ -104,10 +109,11 @@ docker-compose -f docker-compose-replication.yml exec db_slave_1 mysql -uroot -p
   -e "SET GLOBAL rpl_semi_sync_slave_enabled = 1;" \
   -e "SHOW VARIABLES LIKE 'rpl_semi_sync%';"
 ````
+</details>
 
 ## Sharding via Vitess
 <details>
-  <summary>Click to expand</summary>
+<summary>Click to expand</summary>
 
 ### Preparing environment
 
