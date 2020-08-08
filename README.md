@@ -104,3 +104,246 @@ docker-compose -f docker-compose-replication.yml exec db_slave_1 mysql -uroot -p
   -e "SET GLOBAL rpl_semi_sync_slave_enabled = 1;" \
   -e "SHOW VARIABLES LIKE 'rpl_semi_sync%';"
 ````
+
+## Sharding via Vitess
+<details>
+  <summary>Instructions</summary>
+
+````shell script
+
+docker-machine create --driver google \
+     --google-machine-image https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/family/ubuntu-1604-lts \
+     --google-machine-type n1-standard-4 \
+     vitess
+
+eval $(docker-machine env vitess)
+
+gcloud compute firewall-rules create vitess \
+     --allow tcp:15000,tcp:15001,tcp:15306 \
+     --target-tags=docker-machine \
+     --description="Sharing vitess ports" \
+     --direction=INGRESS
+
+git clone https://github.com/vitessio/vitess.git
+cd vitess/ && docker build -f docker/local/Dockerfile -t vitess/local .
+
+docker run -p 15000:15000 -p 15001:15001 -p 15306:15306 --rm -it vitess/local
+
+vttablet \
+ $TOPOLOGY_FLAGS \
+ -logtostderr \
+ -tablet-path "zone1-0000000200" \
+ -init_keyspace app \
+ -init_shard 0 \
+ -init_tablet_type replica \
+ -port 15200 \
+ -grpc_port 16200 \
+ -service_map 'grpc-queryservice,grpc-tabletmanager,grpc-updatestream' \
+ -db_host 35.195.211.151 \
+ -db_port 10100 \
+ -db_repl_user root \
+ -db_repl_password password \
+ -db_filtered_user root \
+ -db_filtered_password password \
+ -db_app_user root \
+ -db_app_password password \
+ -db_dba_user root \
+ -db_dba_password password \
+ -init_db_name_override app \
+ -init_populate_metadata \
+ > $VTDATAROOT/$tablet_dir/vttablet.out 2>&1 &
+
+vttablet \
+ $TOPOLOGY_FLAGS \
+ -logtostderr \
+ -tablet-path "zone1-0000000201" \
+ -init_keyspace app \
+ -init_shard 0 \
+ -init_tablet_type replica \
+ -port 15201 \
+ -grpc_port 16201 \
+ -service_map 'grpc-queryservice,grpc-tabletmanager,grpc-updatestream' \
+ -db_host 35.195.211.151 \
+ -db_port 10101 \
+ -db_repl_user root \
+ -db_repl_password password \
+ -db_filtered_user root \
+ -db_filtered_password password \
+ -db_app_user root \
+ -db_app_password password \
+ -db_dba_user root \
+ -db_dba_password password \
+ -init_db_name_override app \
+ -init_populate_metadata \
+ > $VTDATAROOT/$tablet_dir/vttablet.out 2>&1 &
+
+vtctlclient InitShardMaster -force app/0 zone1-200
+
+vtctl $TOPOLOGY_FLAGS CreateKeyspace -sharding_column_name=chat_id chat_message
+
+for i in 300 301; do
+ CELL=zone1 TABLET_UID=$i ./scripts/mysqlctl-up.sh
+ CELL=zone1 KEYSPACE=chat_message TABLET_UID=$i ./scripts/vttablet-up.sh
+done
+
+vtctlclient InitShardMaster -force chat_message/0 zone1-300
+
+vtctlclient MoveTables -workflow=app2chat_message app chat_message '{"chat_message":{}}'
+
+vtctlclient VDiff chat_message.app2chat_message
+
+vtctlclient SwitchReads -tablet_type=rdonly chat_message.app2chat_message
+vtctlclient SwitchReads -tablet_type=replica chat_message.app2chat_message
+
+vtctlclient SwitchWrites chat_message.app2chat_message
+
+vtctlclient DropSources chat_message.app2chat_message
+
+
+````
+
+
+
+Resharding:
+
+````shell script
+
+for i in 400 401; do
+ CELL=zone1 TABLET_UID=$i ./scripts/mysqlctl-up.sh
+ SHARD=-80 CELL=zone1 KEYSPACE=chat_message TABLET_UID=$i ./scripts/vttablet-up.sh
+done
+
+vtctlclient InitShardMaster -force chat_message/-80 zone1-400
+
+for i in 500 501; do
+ CELL=zone1 TABLET_UID=$i ./scripts/mysqlctl-up.sh
+ SHARD=80- CELL=zone1 KEYSPACE=chat_message TABLET_UID=$i ./scripts/vttablet-up.sh
+done
+
+vtctlclient InitShardMaster -force chat_message/80- zone1-500
+
+echo '{
+    "sharded": true,
+    "vindexes": {
+      "hash_f": {
+        "type": "reverse_bits"
+      }
+    },
+    "tables": {
+      "chat_message": {
+        "column_vindexes": [
+          {
+            "column": "chat_id",
+            "name": "hash_f"
+          }
+        ]
+      },
+      "/.*": {
+        "column_vindexes": [
+          {
+            "column": "chat_id",
+            "name": "hash_f"
+          }
+        ]
+      }
+    }
+}' > chat_vschema.json
+
+vtctl $TOPOLOGY_FLAGS ApplyVSchema -vschema_file=chat_vschema.json chat_message
+
+rm -f chat_vschema.json
+
+vtctlclient ReloadSchemaKeyspace -concurrency=10 chat_message
+
+vtctlclient Reshard chat_message.chat2chat '0' '-80,80-'
+
+vtctlclient VDiff chat_message.chat2chat
+
+vtctlclient SwitchReads -tablet_type=rdonly chat_message.chat2chat
+vtctlclient SwitchReads -tablet_type=replica chat_message.chat2chat
+
+vtctlclient SwitchWrites chat_message.chat2chat
+
+vtctlclient DeleteShard -recursive chat_message/0
+
+````
+
+Another resharding:
+
+````shell script
+for i in 600 601; do
+ CELL=zone1 TABLET_UID=$i ./scripts/mysqlctl-up.sh
+ SHARD=-40 CELL=zone1 KEYSPACE=chat_message TABLET_UID=$i ./scripts/vttablet-up.sh
+done
+
+vtctlclient InitShardMaster -force chat_message/-40 zone1-600
+
+for i in 700 701; do
+ CELL=zone1 TABLET_UID=$i ./scripts/mysqlctl-up.sh
+ SHARD=40-80 CELL=zone1 KEYSPACE=chat_message TABLET_UID=$i ./scripts/vttablet-up.sh
+done
+
+vtctlclient InitShardMaster -force chat_message/40-80 zone1-700
+
+vtctlclient Reshard chat_message.chat2chat-80 '-80' '-40,40-80'
+
+vtctlclient VDiff chat_message.chat2chat-80
+
+vtctlclient SwitchReads -tablet_type=rdonly chat_message.chat2chat-80
+vtctlclient SwitchReads -tablet_type=replica chat_message.chat2chat-80
+
+vtctlclient SwitchWrites chat_message.chat2chat-80
+
+vtctlclient DeleteShard -recursive chat_message/-80
+
+````
+
+````
+{
+    "sharded": true,
+    "vindexes": {
+      "hash_f": {
+        "type": "reverse_bits"
+      }
+    },
+    "tables": {
+      "chat_message": {
+        "column_vindexes": [
+          {
+            "column": "chat_id",
+            "name": "hash_f"
+          }
+        ]
+      }
+    }
+}
+
+
+{
+    "sharded": true,
+    "vindexes": {
+      "hash_f": {
+        "type": "hash"
+      }
+    },
+    "tables": {
+      "chat_message": {
+        "column_vindexes": [
+          {
+            "column": "chat_id",
+            "name": "hash_f"
+          }
+        ]
+      }
+    }
+}
+
+
+vtctlclient DeleteShard -recursive -even_if_serving app/0
+
+vtctl $TOPOLOGY_FLAGS UpdateSrvKeyspacePartition app/-80 master
+vtctl $TOPOLOGY_FLAGS UpdateSrvKeyspacePartition app/80- master
+
+
+````
+</details>
