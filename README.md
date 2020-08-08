@@ -30,6 +30,7 @@ Available at the following [link](https://github.com/antonLytkin18/otus-highload
 ## Master-Slave Replication
 <details>
 <summary>Click to expand</summary>
+
 ````shell script
 $ export GOOGLE_PROJECT=[name]
 $ docker-machine create --driver google \
@@ -77,6 +78,7 @@ START SLAVE;
 ## Master-Slave Semisynchronous Replication
 <details>
 <summary>Click to expand</summary>
+
 Install semi-sync plugin for master:
 ````shell script
 docker-compose exec db mysql -uroot -p \
