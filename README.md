@@ -146,7 +146,7 @@ Run replica databases:
 docker-compose -f docker-compose-replication.yml up -d
 ````
 
-### Move tables to reshard using Vitess without downtime
+### Move source tables to reshard
 
 Create Vttablet using current master and replica databases:
 ```shell script
