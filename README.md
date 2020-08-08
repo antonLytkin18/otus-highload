@@ -107,7 +107,7 @@ docker-compose -f docker-compose-replication.yml exec db_slave_1 mysql -uroot -p
 
 ## Sharding via Vitess
 <details>
-  <summary>Instructions</summary>
+  <summary>Click to expand</summary>
 
 ### Preparing environment
 
