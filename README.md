@@ -109,26 +109,47 @@ docker-compose -f docker-compose-replication.yml exec db_slave_1 mysql -uroot -p
 <details>
   <summary>Instructions</summary>
 
-````shell script
+### Preparing environment
 
+Create GCP instance:
+````shell script
 docker-machine create --driver google \
      --google-machine-image https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/family/ubuntu-1604-lts \
      --google-machine-type n1-standard-4 \
      vitess
-
 eval $(docker-machine env vitess)
+````
 
+Open MySql port by adding firewall rule:
+````shell script
 gcloud compute firewall-rules create vitess \
      --allow tcp:15000,tcp:15001,tcp:15306 \
      --target-tags=docker-machine \
      --description="Sharing vitess ports" \
      --direction=INGRESS
+````
 
+Clone vitess repository and run it using docker:
+```shell script
 git clone https://github.com/vitessio/vitess.git
 cd vitess/ && docker build -f docker/local/Dockerfile -t vitess/local .
-
 docker run -p 15000:15000 -p 15001:15001 -p 15306:15306 --rm -it vitess/local
+```
 
+Run application with master database:
+````
+docker-compose up -d
+````
+
+Run replica databases:
+````
+docker-compose -f docker-compose-replication.yml up -d
+````
+
+### Move tables to reshard using Vitess without downtime
+
+Create Vttablet using current master and replica databases:
+```shell script
 vttablet \
  $TOPOLOGY_FLAGS \
  -logtostderr \
@@ -176,38 +197,72 @@ vttablet \
  -init_db_name_override app \
  -init_populate_metadata \
  > $VTDATAROOT/$tablet_dir/vttablet.out 2>&1 &
+```
 
+Mark first Vttablet as master:
+````shell script
 vtctlclient InitShardMaster -force app/0 zone1-200
+````
 
+Create new Keyspace for resharding:
+````shell script
 vtctl $TOPOLOGY_FLAGS CreateKeyspace -sharding_column_name=chat_id chat_message
+````
 
+Create new Vttablets for single shard:
+````shell script
 for i in 300 301; do
  CELL=zone1 TABLET_UID=$i ./scripts/mysqlctl-up.sh
  CELL=zone1 KEYSPACE=chat_message TABLET_UID=$i ./scripts/vttablet-up.sh
 done
+````
 
+Mark first Vttablet as master:
+````shell script
 vtctlclient InitShardMaster -force chat_message/0 zone1-300
+````
 
+Move table `chat_message`:
+````shell script
 vtctlclient MoveTables -workflow=app2chat_message app chat_message '{"chat_message":{}}'
+````
 
+Show the difference between two sources:
+````shell script
 vtctlclient VDiff chat_message.app2chat_message
 
+````
+
+Switch read and write operations without downtime:
+````shell script
 vtctlclient SwitchReads -tablet_type=rdonly chat_message.app2chat_message
 vtctlclient SwitchReads -tablet_type=replica chat_message.app2chat_message
 
 vtctlclient SwitchWrites chat_message.app2chat_message
-
-vtctlclient DropSources chat_message.app2chat_message
-
-
 ````
 
+Switch application database connection credentials using for `chat_message` table.  
+VTGate credentials:
+````.env
+CHAT_MYSQL_HOST=34.66.217.5
+CHAT_MYSQL_PORT=15306
+CHAT_MYSQL_USER=mysql_user
+CHAT_MYSQL_PASSWORD=mysql_password
+CHAT_MYSQL_ROOT_PASSWORD=mysql_password
+CHAT_MYSQL_DB=chat_message
+````
 
-
-Resharding:
-
+Drop source table:
 ````shell script
+vtctlclient DropSources chat_message.app2chat_message
+````
 
+Now application use VTGate connection to serve all operations with table `chat_message`.
+
+### Resharding from `0` to `-80, 80-` shards without downtime
+
+Create new Vttablets for shards `-80, 80-`:
+````shell script
 for i in 400 401; do
  CELL=zone1 TABLET_UID=$i ./scripts/mysqlctl-up.sh
  SHARD=-80 CELL=zone1 KEYSPACE=chat_message TABLET_UID=$i ./scripts/vttablet-up.sh
@@ -221,7 +276,10 @@ for i in 500 501; do
 done
 
 vtctlclient InitShardMaster -force chat_message/80- zone1-500
+````
 
+Create and apply VSchema for table `chat_message`. Sharding function is `reverse_bits`.
+````shell script
 echo '{
     "sharded": true,
     "vindexes": {
@@ -250,25 +308,40 @@ echo '{
 }' > chat_vschema.json
 
 vtctl $TOPOLOGY_FLAGS ApplyVSchema -vschema_file=chat_vschema.json chat_message
-
 rm -f chat_vschema.json
+````
 
+Reload schema keyspace:
+````shell script
 vtctlclient ReloadSchemaKeyspace -concurrency=10 chat_message
+````
 
+Run resharding:
+````shell script
 vtctlclient Reshard chat_message.chat2chat '0' '-80,80-'
+````
 
+Show the difference between two sources:
+````shell script
 vtctlclient VDiff chat_message.chat2chat
+````
 
+Switch read and write operations without downtime:
+````
 vtctlclient SwitchReads -tablet_type=rdonly chat_message.chat2chat
 vtctlclient SwitchReads -tablet_type=replica chat_message.chat2chat
 
 vtctlclient SwitchWrites chat_message.chat2chat
-
-vtctlclient DeleteShard -recursive chat_message/0
-
 ````
 
-Another resharding:
+Delete source shard:
+````shell script
+vtctlclient DeleteShard -recursive chat_message/0
+````
+
+### Resharding from `-80` to `-40, 40-80` shards without downtime
+
+Create new Vttablets for shards `-40, 40-80`:
 
 ````shell script
 for i in 600 601; do
@@ -284,66 +357,28 @@ for i in 700 701; do
 done
 
 vtctlclient InitShardMaster -force chat_message/40-80 zone1-700
+````
 
+Run resharding:
+````shell script
 vtctlclient Reshard chat_message.chat2chat-80 '-80' '-40,40-80'
+````
 
+Show the difference between two sources:
+````shell script
 vtctlclient VDiff chat_message.chat2chat-80
+````
 
+Switch read and write operations without downtime:
+````shell script
 vtctlclient SwitchReads -tablet_type=rdonly chat_message.chat2chat-80
 vtctlclient SwitchReads -tablet_type=replica chat_message.chat2chat-80
 
 vtctlclient SwitchWrites chat_message.chat2chat-80
+````
 
+Delete source shard:
+````shell script
 vtctlclient DeleteShard -recursive chat_message/-80
-
-````
-
-````
-{
-    "sharded": true,
-    "vindexes": {
-      "hash_f": {
-        "type": "reverse_bits"
-      }
-    },
-    "tables": {
-      "chat_message": {
-        "column_vindexes": [
-          {
-            "column": "chat_id",
-            "name": "hash_f"
-          }
-        ]
-      }
-    }
-}
-
-
-{
-    "sharded": true,
-    "vindexes": {
-      "hash_f": {
-        "type": "hash"
-      }
-    },
-    "tables": {
-      "chat_message": {
-        "column_vindexes": [
-          {
-            "column": "chat_id",
-            "name": "hash_f"
-          }
-        ]
-      }
-    }
-}
-
-
-vtctlclient DeleteShard -recursive -even_if_serving app/0
-
-vtctl $TOPOLOGY_FLAGS UpdateSrvKeyspacePartition app/-80 master
-vtctl $TOPOLOGY_FLAGS UpdateSrvKeyspacePartition app/80- master
-
-
 ````
 </details>
