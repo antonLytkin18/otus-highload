@@ -249,7 +249,7 @@ vtctlclient SwitchReads -tablet_type=replica chat_message.app2chat_message
 vtctlclient SwitchWrites chat_message.app2chat_message
 ````
 
-Switch application database connection credentials using for `chat_message` table.  
+Switch application database connection credentials used for `chat_message` table.  
 VTGate credentials:
 ````.env
 CHAT_MYSQL_HOST=34.66.217.5
@@ -265,7 +265,7 @@ Drop source table:
 vtctlclient DropSources chat_message.app2chat_message
 ````
 
-Now application use VTGate connection to serve all operations with table `chat_message`.
+Now application is using VTGate connection to serve all operations with table `chat_message`.
 
 ### Resharding from `0` to `-80, 80-` shards without downtime
 
