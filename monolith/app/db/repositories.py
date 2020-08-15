@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from injector import inject
 
-from app.db.db import SlaveDb, MySqlPool, ChatShardedDb
+from app.db.db import SlaveDb, ChatShardedDb, Db
 from app.db.models import User, Follower, Model, Chat, ChatMessage
 from app.db.utils import Pagination
 
@@ -12,7 +12,7 @@ class BaseRepository(ABC):
     model_class = None
 
     @inject
-    def __init__(self, db: MySqlPool):
+    def __init__(self, db: Db):
         self.db = db
 
     def fetchone(self, cursor) -> dict:
