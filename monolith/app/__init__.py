@@ -4,7 +4,7 @@ from flask_injector import FlaskInjector
 from app.auth.views import auth, login_manager
 from app.cmd.user import user_cmd
 from app.config import Config
-from app.db.db import MySqlPool
+from app.db.db import DbConnectionPool
 from app.dependencies import configure
 from app.chat.views import chat
 from app.follower.views import follower
@@ -20,7 +20,7 @@ def create_app():
     register_template_filters(app)
     injector = FlaskInjector(app=app, modules=[configure])
     app.injector = injector.injector
-    db = app.injector.get(MySqlPool)
+    db = app.injector.get(DbConnectionPool)
     db.init_app(app)
 
     return app
