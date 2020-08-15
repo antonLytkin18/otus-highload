@@ -1,27 +1,15 @@
+from abc import ABC, abstractmethod
+
 import MySQLdb
+import tarantool
 from flask import current_app, _app_ctx_stack
 
 
-class MySqlPool:
-    config_prefix = ''
-
-    def __init__(self, app=None):
-        if app is not None:
-            self.init_app(app)
+class DbConnectionPool(ABC):
 
     def init_app(self, app):
         if hasattr(app, 'teardown_appcontext'):
             app.teardown_appcontext(self.teardown)
-
-    @property
-    def connect(self):
-        return MySQLdb.connect(
-            host=current_app.config.get(f'{self.config_prefix}MYSQL_HOST'),
-            port=current_app.config.get(f'{self.config_prefix}MYSQL_PORT'),
-            user=current_app.config.get(f'{self.config_prefix}MYSQL_USER'),
-            passwd=current_app.config.get(f'{self.config_prefix}MYSQL_PASSWORD'),
-            db=current_app.config.get(f'{self.config_prefix}MYSQL_DB'),
-        )
 
     @property
     def connection(self):
@@ -41,6 +29,38 @@ class MySqlPool:
             return
         for name, connection in ctx.db_connection_pool.items():
             connection.close()
+
+    @abstractmethod
+    def connect(self):
+        pass
+
+
+class MySqlPool(DbConnectionPool):
+    config_prefix = ''
+
+    @property
+    def connect(self):
+        return MySQLdb.connect(
+            host=current_app.config.get(f'{self.config_prefix}MYSQL_HOST'),
+            port=current_app.config.get(f'{self.config_prefix}MYSQL_PORT'),
+            user=current_app.config.get(f'{self.config_prefix}MYSQL_USER'),
+            passwd=current_app.config.get(f'{self.config_prefix}MYSQL_PASSWORD'),
+            db=current_app.config.get(f'{self.config_prefix}MYSQL_DB'),
+        )
+
+
+class TarantoolPool(DbConnectionPool):
+
+    @property
+    def connect(self):
+        return tarantool.connect(
+            host=current_app.config.get('TARANTOOL_HOST'),
+            port=current_app.config.get('TARANTOOL_PORT')
+        )
+
+
+class TarantoolDb(TarantoolPool):
+    pass
 
 
 class Db(MySqlPool):

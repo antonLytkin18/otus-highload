@@ -25,3 +25,6 @@ class Config:
     CHAT_MYSQL_USER = os.environ.get('CHAT_MYSQL_USER')
     CHAT_MYSQL_PASSWORD = os.environ.get('CHAT_MYSQL_PASSWORD')
     CHAT_MYSQL_DB = os.environ.get('CHAT_MYSQL_DB')
+
+    TARANTOOL_HOST = os.environ.get('TARANTOOL_HOST')
+    TARANTOOL_PORT = int(os.environ.get('TARANTOOL_PORT', 3301))
