@@ -14,7 +14,6 @@ services:
     volumes:
       - ./db/volume:/var/lib/mysql
 
-
   monolith:
     build: ./monolith
     env_file:
@@ -25,3 +24,18 @@ services:
       - 5000:5000
     depends_on:
       - db
+
+  tarantool:
+    image: tarantool/tarantool:1.10.6
+    volumes:
+      - ./tarantool/volume:/var/lib/tarantool
+      - ./tarantool/conf/init.lua:/opt/tarantool/init.lua
+    ports:
+      - 3301:3301
+
+  tarantool-replicator:
+    build: ./tarantool-replicator
+    privileged: true
+    depends_on:
+      - db
+      - tarantool
