@@ -2,7 +2,7 @@ from flask import Blueprint, abort, render_template, request
 from flask_login import login_required, current_user
 from injector import inject
 
-from app.db.repositories import UserRepository, UserFollowerRepository, UserFollowerReadOnlyRepository
+from app.db.repositories import UserRepository, UserFollowerRepository, UserTarantoolRepository
 from app.follower.exceptions import FollowerAlreadyExistsException, FollowerDoesNotExistsException
 from app.follower.forms import FilterForm
 from app.follower.services import FollowerService
@@ -70,6 +70,29 @@ def list_all(page, repository: UserFollowerRepository):
         list=[v.get_info(current_user.id) for k, v in pagination.list.items()],
         pagination=pagination.get_params(),
         form=filter_form,
+    )
+
+
+@inject
+@follower.route('/list/all/tarantool', defaults={'page': 1}, methods=['GET'])
+@follower.route('/list/all/tarantool/<page>', methods=['GET'])
+@login_required
+def list_all_tarantool(page, repository: UserTarantoolRepository):
+    filter_form = FilterForm(data=request.args.to_dict())
+    pagination = repository.paginate_all(
+        last_name_like=filter_form.last_name_like.data,
+        name_like=filter_form.name_like.data,
+        limit=10,
+        page=int(page)
+    )
+
+    return render_template(
+        'follower-list.html',
+        title='Profiles',
+        list=[v.get_info(current_user.id) for k, v in pagination.list.items()],
+        pagination=pagination.get_params(),
+        form=filter_form,
+        show_actions=False,
     )
 
 
