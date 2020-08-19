@@ -26,7 +26,7 @@
                     </b-col>
                 </b-row>
             </b-card-body>
-            <template v-slot:footer>
+            <template v-if="showActions" v-slot:footer>
                 <v-follower-actions
                         :item="item"
                         :send-url="sendUrl"
@@ -56,6 +56,10 @@
             sendUrl: String,
             acceptUrl: String,
             pagination: Object,
+            showActions: {
+                type: Boolean,
+                default: true
+            },
         },
         methods: {
             onSend: function (e, item) {
