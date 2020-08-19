@@ -390,3 +390,25 @@ Delete source shard:
 vtctlclient DeleteShard -recursive chat_message/-80
 ````
 </details>
+
+## Tarantool Replication
+<details>
+<summary>Click to expand</summary>
+
+1. Start docker-compose:
+````shell script
+docker-compose up -d
+````
+
+2. Run tarantool console and execute script within:
+````shell script
+docker-compose exec tarantool console
+dofile('/opt/tarantool/init.lua')
+````
+
+3. Restart Tarantool for replicator to read binlog and start replication:
+````shell script
+docker-compose restart tarantool-replicator
+````
+
+</details>
