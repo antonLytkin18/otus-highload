@@ -5,7 +5,7 @@
     <hr>
     {% if form %}
         <v-filter-form
-                url="{{ url_for('follower.list_all') }}"
+                url="{{ request.path }}"
                 :form="{{ form|form_tojson }}"
                 submit-button-title="Find"
         ></v-filter-form>
@@ -24,6 +24,9 @@
             accept-url="{{ url_for('follower.accept', user_id=':id') }}"
             {% if pagination %}
                 :pagination="{{ pagination }}"
+            {% endif %}
+            {% if show_actions == False %}
+                :show-actions="false"
             {% endif %}
     ></v-follower-list>
 </b-container>
