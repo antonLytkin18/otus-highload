@@ -2,31 +2,12 @@ from abc import ABC, abstractmethod
 
 from injector import inject
 
-from app.db.db import SlaveDb, ChatShardedDb, Db
+from app.db.db import SlaveDb, ChatShardedDb, Db, TarantoolDb
 from app.db.models import User, Follower, Model, Chat, ChatMessage
 from app.db.utils import Pagination
 
 
 class BaseRepository(ABC):
-    table_name = None
-    model_class = None
-
-    @inject
-    def __init__(self, db: Db):
-        self.db = db
-
-    def fetchone(self, cursor) -> dict:
-        data = cursor.fetchone()
-        return dict(zip(self.get_columns(cursor), data)) if data else {}
-
-    def fetchall(self, cursor) -> list:
-        data = cursor.fetchall()
-        return [dict(zip(self.get_columns(cursor), row)) for row in data] if data else []
-
-    @staticmethod
-    def get_columns(cursor) -> list:
-        return [col[0] for col in cursor.description]
-
     @abstractmethod
     def find_one(self, **kwargs) -> Model:
         pass
@@ -48,7 +29,70 @@ class BaseRepository(ABC):
         pass
 
 
-class CommonRepository(BaseRepository):
+class BaseMysqlRepository(BaseRepository, ABC):
+    table_name = None
+    model_class = None
+
+    @inject
+    def __init__(self, db: Db):
+        self.db = db
+
+    def fetchone(self, cursor) -> dict:
+        data = cursor.fetchone()
+        return dict(zip(self.get_columns(cursor), data)) if data else {}
+
+    def fetchall(self, cursor) -> list:
+        data = cursor.fetchall()
+        return [dict(zip(self.get_columns(cursor), row)) for row in data] if data else []
+
+    @staticmethod
+    def get_columns(cursor) -> list:
+        return [col[0] for col in cursor.description]
+
+
+class BaseTarantoolRepository(BaseRepository):
+    space_name = None
+    model_class = None
+    model_properties = []
+
+    @inject
+    def __init__(self, db: TarantoolDb):
+        self.db = db
+
+    @property
+    def space(self):
+        return self.db.connection.space(self.space_name)
+
+    def find_one(self, **kwargs) -> Model:
+        pass
+
+    def find_all(self, **kwargs) -> dict:
+        items = {}
+        for item in self._find_all_callback(**kwargs):
+            data = dict(zip(self.model_properties, item))
+            model = self.model_class(**data)
+            items[model.id] = model
+        return items
+
+    def _find_all_callback(self, **kwargs):
+        limit = kwargs.get('limit', 10)
+        offset = kwargs.get('offset', 0)
+        return self.space.select(limit=limit, offset=offset)
+
+    def count_all(self, **kwargs) -> int:
+        return self.space.call('count_all', [self.space_name]).data[0]
+
+    def paginate_all(self, limit=10, page=1, **kwargs) -> Pagination:
+        offset = (page - 1) * limit
+        items = self.find_all(limit=limit, offset=offset, **kwargs)
+        count = self.count_all(**kwargs)
+        return Pagination(per_page=limit, page=page, count=count, list=items)
+
+    def save(self, model: Model) -> bool:
+        pass
+
+
+class CommonMysqlRepository(BaseMysqlRepository):
 
     def find_one(self, **kwargs) -> Model:
         order_by_clause = kwargs.pop('order_by', False)
@@ -101,17 +145,17 @@ class CommonRepository(BaseRepository):
         return True
 
 
-class UserRepository(CommonRepository):
+class UserRepository(CommonMysqlRepository):
     table_name = 'user'
     model_class = User
 
 
-class FollowerRepository(CommonRepository):
+class FollowerRepository(CommonMysqlRepository):
     table_name = 'follower'
     model_class = Follower
 
 
-class UserFollowerRepository(BaseRepository):
+class UserFollowerRepository(BaseMysqlRepository):
     table_name = 'user'
     model_class = User
     alias = 'u'
@@ -279,12 +323,12 @@ class UserFollowerReadOnlyRepository(UserFollowerRepository):
         raise Exception('Cannot make write operations in read-only repository')
 
 
-class ChatRepository(CommonRepository):
+class ChatRepository(CommonMysqlRepository):
     table_name = 'chat'
     model_class = Chat
 
 
-class ChatMessageRepository(CommonRepository):
+class ChatMessageRepository(CommonMysqlRepository):
     table_name = 'chat_message'
     model_class = ChatMessage
 
@@ -293,3 +337,21 @@ class ChatMessageShardedRepository(ChatMessageRepository):
     @inject
     def __init__(self, db: ChatShardedDb):
         super().__init__(db)
+
+
+class UserTarantoolRepository(BaseTarantoolRepository):
+    space_name = '513'
+    model_class = User
+    model_properties = ['id', 'name', 'last_name', 'email', 'birth_date', 'password', 'gender', 'interests', 'city']
+
+    def _find_all_callback(self, **kwargs):
+        limit = kwargs.get('limit', 10)
+        offset = kwargs.get('offset', 0)
+        last_name_like = kwargs.get('last_name_like') or ''
+        name_like = kwargs.get('name_like') or ''
+        return self.space.call('follower_find_all', [last_name_like, name_like, limit, offset]).data[0]
+
+    def count_all(self, **kwargs) -> int:
+        last_name_like = kwargs.get('last_name_like') or ''
+        name_like = kwargs.get('name_like') or ''
+        return self.space.call('follower_count_all', [last_name_like, name_like]).data[0]
