@@ -1,0 +1,20 @@
+mysql:
+    host: db
+    port: 3306
+    user: root
+    password: password
+    connect_retry: 15 # seconds
+
+tarantool:
+    host: tarantool
+    binlog_pos_space: 512
+    binlog_pos_key: 0
+    connect_retry: 15 # seconds
+    sync_retry: 1000 # milliseconds
+
+mappings:
+    - database: app
+      table: user
+      columns: [ id, name, last_name, email, birth_date, password, gender, interests, city ]
+      space: 513
+      key_fields: [ 0 ]

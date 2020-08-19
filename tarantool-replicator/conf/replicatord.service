@@ -1,0 +1,10 @@
+[Unit]
+Description=Mysql to Tarantool replication daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/replicatord -c /usr/local/etc/replicatord.yml
+
+[Install]
+WantedBy=multi-user.target
