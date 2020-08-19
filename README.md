@@ -406,7 +406,7 @@ docker-compose exec tarantool console
 dofile('/opt/tarantool/init.lua')
 ````
 
-3. Restart Tarantool for replicator to read binlog and start replication:
+3. Restart replicator container to read binlog and start replication:
 ````shell script
 docker-compose restart tarantool-replicator
 ````
