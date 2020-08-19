@@ -5,7 +5,7 @@ from app.chat.services import ChatService
 from app.db.db import Db, SlaveDb, ChatShardedDb, TarantoolDb, DbConnectionPool
 from app.follower.services import FollowerService
 from app.db.repositories import UserRepository, UserFollowerRepository, FollowerRepository, \
-    UserFollowerReadOnlyRepository
+    UserFollowerReadOnlyRepository, UserTarantoolRepository
 
 
 def configure(binder):
@@ -21,3 +21,4 @@ def configure(binder):
     binder.bind(SlaveDb, scope=singleton)
     binder.bind(ChatShardedDb, scope=singleton)
     binder.bind(TarantoolDb, scope=singleton)
+    binder.bind(UserTarantoolRepository, scope=singleton)
