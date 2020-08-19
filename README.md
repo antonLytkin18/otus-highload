@@ -411,4 +411,14 @@ dofile('/opt/tarantool/init.lua')
 docker-compose restart tarantool-replicator
 ````
 
+4. Check replicatord status:
+````shell script
+docker-compose exec tarantool-replicator systemctl status replicatord
+````
+
+5. Analyze replicatord logs:
+````shell script
+docker-compose exec tarantool-replicator tail -f /var/log/replicatord.log
+````
+
 </details>
