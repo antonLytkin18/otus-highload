@@ -39,3 +39,21 @@ services:
     depends_on:
       - db
       - tarantool
+
+  redis:
+    image: redis:6
+    ports:
+      - 6379:6379
+    volumes:
+      - ./redis/volume:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - 15672:15672
+      - 5672:5672
+    volumes:
+      - ./rabbitmq/volume:/var/lib/rabbitmq
