@@ -8,3 +8,6 @@ alembic
 gunicorn
 Faker
 tarantool
+redis
+python-redis-cache
+celery
