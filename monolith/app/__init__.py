@@ -10,6 +10,7 @@ from app.chat.views import chat
 from app.follower.views import follower
 from app.main.views import main
 from app.templates.extenstions.filters import tojson_escaped, form_tojson
+from task import celery
 
 
 def create_app():
@@ -22,6 +23,8 @@ def create_app():
     app.injector = injector.injector
     db = app.injector.get(DbConnectionPool)
     db.init_app(app)
+    celery.conf.broker_url = app.config.get('CELERY_BROKER_URL')
+    celery.conf.update(app.config)
 
     return app
 

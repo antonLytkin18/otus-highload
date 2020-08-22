@@ -28,3 +28,5 @@ class Config:
 
     TARANTOOL_HOST = os.environ.get('TARANTOOL_HOST')
     TARANTOOL_PORT = int(os.environ.get('TARANTOOL_PORT', 3301))
+
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
