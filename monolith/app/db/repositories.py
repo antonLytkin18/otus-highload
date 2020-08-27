@@ -335,6 +335,16 @@ class ChatMessageShardedRepository(ChatMessageRepository):
         super().__init__(db)
 
 
+class PostRepository(CommonMysqlRepository):
+    table_name = 'post'
+    model_class = Post
+
+
+class FeedRepository(CommonMysqlRepository):
+    table_name = 'feed'
+    model_class = Feed
+
+
 class UserTarantoolRepository(BaseTarantoolRepository):
     space_name = '513'
     model_class = User
