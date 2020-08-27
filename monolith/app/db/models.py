@@ -10,12 +10,14 @@ from flask_login import UserMixin
 class Model:
 
     def as_dict(self):
-        return {k: self._format_value(v) for k, v in asdict(self).items() if k not in self.get_related_properties()}
+        return {k: self._format_value(v) for k, v in asdict(self).items()}
 
-    @staticmethod
-    def _format_value(value):
+    @classmethod
+    def _format_value(cls, value):
+        if isinstance(value, dict):
+            return {k: cls._format_value(v) for k, v in value.items()}
         if isinstance(value, Date):
-            return value.__str__()
+            return value.__format__('%Y-%m-%d %H:%I:%S')
         return value
 
     @classmethod
