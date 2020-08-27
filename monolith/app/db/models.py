@@ -108,3 +108,29 @@ class ChatMessage(Model):
     chat_id: int = None
     message: str = None
     date_create: DateTimeType = None
+
+
+@dataclass()
+class Post(Model):
+    id: int = None
+    user_id: int = None
+    user: User = None
+    data: str = None
+    date_create: DateTimeType = None
+
+    @staticmethod
+    def get_related_properties():
+        return ['user']
+
+
+@dataclass()
+class Feed(Model):
+    id: int = None
+    user_id: int = None
+    post_id: int = None
+    post: Post = None
+    date_create: DateTimeType = None
+
+    @staticmethod
+    def get_related_properties():
+        return ['post']
