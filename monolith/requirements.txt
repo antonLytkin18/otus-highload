@@ -11,3 +11,4 @@ tarantool
 redis
 python-redis-cache
 celery
+blinker
