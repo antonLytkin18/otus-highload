@@ -14,6 +14,8 @@ Vue.component('v-chat-message-list', require('./components/Chat/ChatMessageList.
 Vue.component('v-chat-list', require('./components/Chat/ChatList.vue').default);
 Vue.component('v-chat-income-message', require('./components/Chat/ChatIncomeMessage.vue').default);
 Vue.component('v-chat-outcome-message', require('./components/Chat/ChatOutcomeMessage.vue').default);
+Vue.component('v-feed', require('./components/Feed/Feed.vue').default);
+Vue.component('v-feed-post', require('./components/Feed/FeedPost.vue').default);
 Vue.component('v-select', vSelect);
 
 Vue.use(BootstrapVue)
