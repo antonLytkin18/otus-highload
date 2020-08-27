@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from injector import inject
 
 from app.db.db import SlaveDb, ChatShardedDb, Db, TarantoolDb
-from app.db.models import User, Follower, Model, Chat, ChatMessage
+from app.db.models import User, Follower, Model, Chat, ChatMessage, Post, Feed
 from app.db.utils import Pagination
 
 
@@ -20,9 +20,11 @@ class BaseRepository(ABC):
     def count_all(self, **kwargs) -> int:
         pass
 
-    @abstractmethod
     def paginate_all(self, limit=10, page=1, **kwargs) -> Pagination:
-        pass
+        offset = (page - 1) * limit
+        items = self.find_all(limit=limit, offset=offset, **kwargs)
+        count = self.count_all(**kwargs)
+        return Pagination(per_page=limit, page=page, count=count, list=items)
 
     @abstractmethod
     def save(self, model: Model) -> bool:
@@ -37,17 +39,25 @@ class BaseMysqlRepository(BaseRepository, ABC):
     def __init__(self, db: Db):
         self.db = db
 
-    def fetchone(self, cursor) -> dict:
+    def _fetchone(self, cursor) -> dict:
         data = cursor.fetchone()
-        return dict(zip(self.get_columns(cursor), data)) if data else {}
+        return dict(zip(self._get_columns(cursor), data)) if data else {}
 
-    def fetchall(self, cursor) -> list:
+    def _fetchall(self, cursor) -> list:
         data = cursor.fetchall()
-        return [dict(zip(self.get_columns(cursor), row)) for row in data] if data else []
+        return [dict(zip(self._get_columns(cursor), row)) for row in data] if data else []
 
     @staticmethod
-    def get_columns(cursor) -> list:
+    def _get_columns(cursor) -> list:
         return [col[0] for col in cursor.description]
+
+    @staticmethod
+    def _build_limit_statement(limit: int, offset: int = None) -> str:
+        if not limit:
+            return ''
+        limit_statement = f'LIMIT {limit}'
+        limit_statement += f' OFFSET {offset}' if offset else ''
+        return limit_statement
 
 
 class BaseTarantoolRepository(BaseRepository):
@@ -82,41 +92,41 @@ class BaseTarantoolRepository(BaseRepository):
     def count_all(self, **kwargs) -> int:
         return self.space.call('count_all', [self.space_name]).data[0]
 
-    def paginate_all(self, limit=10, page=1, **kwargs) -> Pagination:
-        offset = (page - 1) * limit
-        items = self.find_all(limit=limit, offset=offset, **kwargs)
-        count = self.count_all(**kwargs)
-        return Pagination(per_page=limit, page=page, count=count, list=items)
-
     def save(self, model: Model) -> bool:
         pass
 
 
 class CommonMysqlRepository(BaseMysqlRepository):
+    count_alias = 'cnt'
 
-    def find_one(self, **kwargs) -> Model:
+    def _build_query(self, **kwargs):
+        limit = kwargs.pop('limit', None)
+        offset = kwargs.pop('offset', None)
+        select_clause = f'COUNT(id) {self.count_alias}' if kwargs.pop('select_count', False) else '*'
         order_by_clause = kwargs.pop('order_by', False)
         order_statement = f'ORDER BY {order_by_clause}' if order_by_clause else ''
         where_conditions = ' AND '.join([f'{column}=%({column})s' for column in kwargs])
         where_statement = f'WHERE {where_conditions}' if where_conditions else ''
+        limit_statement = self._build_limit_statement(limit, offset)
+        return f'SELECT {select_clause} FROM {self.table_name} {where_statement} {order_statement} {limit_statement}'
+
+    def find_one(self, **kwargs) -> Model:
         with self.db.connection.cursor() as cursor:
-            cursor.execute(f'SELECT * FROM {self.table_name} {where_statement} {order_statement}', kwargs)
-            data = self.fetchone(cursor)
+            cursor.execute(self._build_query(**kwargs), kwargs)
+            data = self._fetchone(cursor)
         return self.model_class(**data) if data else False
 
     def find_all(self, **kwargs) -> list:
-        where_conditions = ' AND '.join([f'{column}=%({column})s' for column in kwargs])
-        where_statement = f'WHERE {where_conditions}' if where_conditions else ''
         with self.db.connection.cursor() as cursor:
-            cursor.execute(f'SELECT * FROM {self.table_name} {where_statement}', kwargs)
-            data = self.fetchall(cursor)
+            cursor.execute(self._build_query(**kwargs), kwargs)
+            data = self._fetchall(cursor)
         return [self.model_class(**item) for item in data]
 
-    def paginate_all(self, limit=10, page=1, **kwargs) -> Pagination:
-        pass
-
     def count_all(self, **kwargs) -> int:
-        pass
+        with self.db.connection.cursor() as cursor:
+            cursor.execute(self._build_query(select_count=True, **kwargs), kwargs)
+            data = self._fetchone(cursor)
+        return int(data[self.count_alias]) if self.count_alias in data else 0
 
     def save(self, model: Model) -> bool:
         if model.id:
@@ -130,7 +140,7 @@ class CommonMysqlRepository(BaseMysqlRepository):
         with self.db.connection.cursor() as cursor:
             cursor.execute(f'INSERT INTO {self.table_name} ({columns}) VALUES ({values})', data)
             cursor.execute('SELECT LAST_INSERT_ID()')
-            last_id_result = self.fetchone(cursor)
+            last_id_result = self._fetchone(cursor)
             last_id, *_ = list(last_id_result.values())
             model.id = last_id
             cursor.connection.commit()
@@ -174,14 +184,6 @@ class UserFollowerRepository(BaseMysqlRepository):
     @staticmethod
     def _build_select_clause(columns: list, alias: str = None) -> str:
         return ', '.join([f'{alias}.{column} {alias}_{column}' if alias else column for column in columns])
-
-    @staticmethod
-    def _build_limit_statement(limit: int, offset: int = None) -> str:
-        if not limit:
-            return ''
-        limit_statement = f'LIMIT {limit}'
-        limit_statement += f' OFFSET {offset}' if offset else ''
-        return limit_statement
 
     def _build_subquery(self, **kwargs):
         limit = kwargs.get('limit')
@@ -279,13 +281,13 @@ class UserFollowerRepository(BaseMysqlRepository):
         query, search_params = self._create_query(**kwargs)
         with self.db.connection.cursor() as cursor:
             cursor.execute(query, search_params)
-            return self.fetchone(cursor)
+            return self._fetchone(cursor)
 
     def _find_all_items(self, **kwargs):
         query, search_params = self._create_query(**kwargs)
         with self.db.connection.cursor() as cursor:
             cursor.execute(query, search_params)
-            return self.fetchall(cursor)
+            return self._fetchall(cursor)
 
     def find_one(self, **kwargs) -> User:
         item = self._find_one_item(**kwargs)
@@ -302,12 +304,6 @@ class UserFollowerRepository(BaseMysqlRepository):
     def count_all(self, **kwargs) -> int:
         item = self._find_one_item(select_count=True, **kwargs)
         return int(item[self.count_alias]) if self.count_alias in item else 0
-
-    def paginate_all(self, limit=10, page=1, **kwargs) -> Pagination:
-        offset = (page - 1) * limit
-        items = self.find_all(limit=limit, offset=offset, **kwargs)
-        count = self.count_all(**kwargs)
-        return Pagination(per_page=limit, page=page, count=count, list=items)
 
     def save(self, model: Model) -> bool:
         pass
