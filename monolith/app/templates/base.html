@@ -16,11 +16,12 @@
                 button
                 rounded
                 :size="36"
-                @click="location.href = '{{ url_for('main.index') }}'"
+                @click="location.href = '{{ url_for('feed.index') }}'"
         ><b>SN</b></b-avatar>
         <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
         <b-collapse id="nav-collapse" is-nav>
             <b-navbar-nav>
+                <b-nav-item href="{{ url_for('feed.index') }}">Feed</b-nav-item>
                 <b-nav-item href="{{ url_for('follower.list_all') }}">Profiles</b-nav-item>
                 <b-nav-item href="{{ url_for('follower.list_accepted') }}">Followers</b-nav-item>
                 <b-nav-item href="{{ url_for('chat.index') }}">Chats</b-nav-item>
@@ -31,6 +32,7 @@
                         <template v-slot:button-content>
                             <b-avatar :size="24"></b-avatar>
                         </template>
+                        <b-dropdown-item href="{{ url_for('main.index') }}">Profile</b-dropdown-item>
                         <b-dropdown-item href="{{ url_for('auth.logout') }}">Sign Out</b-dropdown-item>
                     </b-nav-item-dropdown>
                 {% endif %}

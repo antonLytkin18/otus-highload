@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<b-container>
+    <h3>Feed</h3>
+    <hr>
+    <v-feed
+        :list="{{ list|tojson_escaped }}"
+        feed-url="{{ url_for('feed.index', page=':page') }}"
+        add-post-url="{{ url_for('feed.add_post') }}"
+        {% if pagination %}
+            :pagination="{{ pagination }}"
+        {% endif %}
+    ></v-feed>
+</b-container>
+{% endblock %}
