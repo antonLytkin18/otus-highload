@@ -9,7 +9,7 @@ from task import celery
 
 
 @celery.task
-def update_followers_feed(user_id, post_id):
+def update_followers_feeds(user_id, post_id):
     injector = current_app.injector
     follower_repository: UserFollowerRepository = injector.get(UserFollowerRepository)
     user_repository: UserRepository = injector.get(UserRepository)
@@ -20,11 +20,11 @@ def update_followers_feed(user_id, post_id):
     )
     followers[current_user.id] = current_user
     for key, follower in followers.items():
-        update_follower_feed.delay(follower.id, post_id)
+        process_follower_feed.delay(follower.id, post_id)
 
 
 @celery.task
-def update_follower_feed(follower_id, post_id):
+def process_follower_feed(follower_id, post_id):
     repository = current_app.injector.get(FeedRepository)
     service: FeedService = current_app.injector.get(FeedService)
     feed_post = Feed(
