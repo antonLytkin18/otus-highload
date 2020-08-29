@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import MySQLdb
 import tarantool
 from flask import current_app, _app_ctx_stack
+from redis import StrictRedis
 
 
 class DbConnectionPool(ABC):
@@ -59,8 +60,11 @@ class TarantoolPool(DbConnectionPool):
         )
 
 
-class TarantoolDb(TarantoolPool):
-    pass
+class RedisPool(DbConnectionPool):
+
+    @property
+    def connect(self):
+        return StrictRedis(host=current_app.config.get('REDIS_CACHE_HOST'), decode_responses=True)
 
 
 class Db(MySqlPool):
@@ -73,3 +77,11 @@ class SlaveDb(MySqlPool):
 
 class ChatShardedDb(MySqlPool):
     config_prefix = 'CHAT_'
+
+
+class TarantoolDb(TarantoolPool):
+    pass
+
+
+class RedisDb(RedisPool):
+    pass
