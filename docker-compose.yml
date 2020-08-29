@@ -25,6 +25,17 @@ services:
     depends_on:
       - db
 
+  celery:
+    build: ./monolith
+    command: celery worker -A task.worker.celery --loglevel=info
+    env_file:
+      - .env
+    volumes:
+      - ./monolith:/monolith
+    depends_on:
+      - monolith
+      - db
+
   tarantool:
     image: tarantool/tarantool:1.10.6
     volumes:
