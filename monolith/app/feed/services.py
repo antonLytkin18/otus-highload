@@ -44,4 +44,4 @@ class FeedService:
             post = post_repository.find_one(id=feed.post_id)
             post.user = user_repository.find_one(id=post.user_id)
             feed.post = post
-        return [feed_post.as_dict() for feed_post in feeds], pagination.get_params()
+        return [feed_post.as_dict(True) for feed_post in feeds], pagination.get_params()

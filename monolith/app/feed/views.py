@@ -31,4 +31,4 @@ def add_post(service: FeedService):
         return {'success': False, 'errors': form.errors}
     post = service.add_post(current_user.id, form.message.data)
 
-    return {'success': True, 'message': post.as_dict()}
+    return {'success': True, 'message': post.as_dict(True)}
