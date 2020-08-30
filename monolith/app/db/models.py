@@ -9,8 +9,9 @@ from flask_login import UserMixin
 @dataclass()
 class Model:
 
-    def as_dict(self):
-        return {k: self._format_value(v) for k, v in asdict(self).items()}
+    def as_dict(self, with_related=False):
+        return {k: self._format_value(v) for k, v in asdict(self).items() if
+                with_related or k not in self.get_related_properties()}
 
     @classmethod
     def _format_value(cls, value):
@@ -66,6 +67,7 @@ class User(Model, UserMixin):
     email: str = None
     password: str = None
     birth_date: Date = None
+    age: int = None
     gender: str = None
     interests: str = None
     city: str = None
