@@ -427,39 +427,20 @@ docker-compose exec tarantool-replicator tail -f /var/log/replicatord.log
 <details>
 <summary>Click to expand</summary>
 
-1. Create user table:
-````sql
-CREATE TABLE default.user (
-    id Int64,
-    name String,
-    last_name String,
-    email String,
-    birth_date Date,
-    password String,
-    gender UInt8,
-    interests String,
-    city String,
-    age UInt8
-)
-ENGINE = MergeTree()
-PARTITION BY (age,gender)
-ORDER BY (age,gender);
-````
-
-2. Create csv file containing user table data, then remove local sql dump:
+1. Create csv file containing user table data, then remove local sql dump:
 
 ````shell script
 sudo mysqldump -h127.0.0.1 -P10100 -uroot -p --tz-utc --quick --fields-terminated-by=, --fields-optionally-enclosed-by=\" --fields-escaped-by=\  --tab="/var/lib/mysql-files/" app user
 sudo rm -f /var/lib/mysql-files/user.sql
 ````
 
-3. Copy csv file into clickhouse directory, then remove source file from `db` container:
+2. Copy csv file into clickhouse directory, then remove source file from `db` container:
 ````shell script
 docker-compose exec db cat /var/lib/mysql-files/user.txt > clickhouse/dump/user.txt
 docker-compose exec db rm -f /var/lib/mysql-files/user.txt
 ````
 
-4. Apply data from dump into clickhouse `user` table:
+3. Apply data from dump into clickhouse `user` table:
 
 ````shell script
 docker-compose exec clickhouse bash
