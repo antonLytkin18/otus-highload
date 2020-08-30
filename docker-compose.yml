@@ -51,6 +51,16 @@ services:
       - db
       - tarantool
 
+  clickhouse:
+    image: yandex/clickhouse-server:20.1.15.109
+    ports:
+      - 8123:8123
+      - 9000:9000
+    volumes:
+      - ./clickhouse/initdb:/docker-entrypoint-initdb.d
+      - ./clickhouse/volume:/var/lib/clickhouse
+      - ./clickhouse/dump:/dump
+
   redis:
     image: redis:6
     ports:
