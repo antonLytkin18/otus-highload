@@ -7,6 +7,7 @@ from app.feed.services import FeedService
 from app.follower.services import FollowerService
 from app.db.repositories import UserRepository, UserFollowerRepository, FollowerRepository, \
     UserFollowerReadOnlyRepository, UserTarantoolRepository, PostRepository, FeedRepository
+from app.socketio.socketio import AppSocketIO
 
 
 def configure(binder):
@@ -27,3 +28,4 @@ def configure(binder):
     binder.bind(TarantoolDb, scope=singleton)
     binder.bind(RedisDb, scope=singleton)
     binder.bind(UserTarantoolRepository, scope=singleton)
+    binder.bind(AppSocketIO, scope=singleton)

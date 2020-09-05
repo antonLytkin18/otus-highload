@@ -12,3 +12,4 @@ redis
 python-redis-cache
 celery
 blinker
+flask-socketio
