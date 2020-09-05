@@ -1,8 +1,9 @@
-import Vue from 'vue'
-import {BootstrapVue, IconsPlugin} from 'bootstrap-vue'
-import urlMixin from "./mixins/urlMixin.js";
-import vSelect from "vue-select";
-import "vue-select/dist/vue-select.css";
+import Vue from 'vue';
+import VueSocketIO from 'vue-socket.io';
+import {BootstrapVue, IconsPlugin} from 'bootstrap-vue';
+import urlMixin from './mixins/urlMixin.js';
+import vSelect from 'vue-select';
+import 'vue-select/dist/vue-select.css';
 
 Vue.mixin(urlMixin);
 Vue.component('v-form', require('./components/Form.vue').default);
@@ -18,14 +19,23 @@ Vue.component('v-feed', require('./components/Feed/Feed.vue').default);
 Vue.component('v-feed-post', require('./components/Feed/FeedPost.vue').default);
 Vue.component('v-select', vSelect);
 
-Vue.use(BootstrapVue)
-Vue.use(IconsPlugin)
-Vue.config.devtools = true
+const webSocketUrl = process.env.WEB_SOCKET_URL;
+if (webSocketUrl) {
+    Vue.use(new VueSocketIO({
+        debug: true,
+        connection: webSocketUrl,
+    }));
+}
+
+Vue.use(BootstrapVue);
+Vue.use(IconsPlugin);
+
+Vue.config.devtools = true;
 
 window.axios = require('axios');
 
-import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap-vue/dist/bootstrap-vue.css'
+import 'bootstrap/dist/css/bootstrap.css';
+import 'bootstrap-vue/dist/bootstrap-vue.css';
 
 new Vue({
     el: '#app',
