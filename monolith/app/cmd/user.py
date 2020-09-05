@@ -32,10 +32,19 @@ def update_gender():
     gender_male = 1
     gender_female = 2
     repository: UserRepository = current_app.injector.get(UserRepository)
-    with click.progressbar(repository.find_all()) as bar:
-        for user in bar:
+    today = date.today()
+    limit = 100
+    offset = 0
+    count = repository.count_all()
+
+    while offset <= count:
+        for user in repository.find_all(limit=limit, offset=offset):
+            incomplete_year = (today.month, today.day) < (user.birth_date.month, user.birth_date.day)
+            age = today.year - user.birth_date.year - incomplete_year
+            user.age = age
             user.gender = random.randint(gender_male, gender_female)
             repository.save(user)
+        offset += limit
 
 
 @user_cmd.cli.command('update-age')
