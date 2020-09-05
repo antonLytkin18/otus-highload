@@ -15,6 +15,12 @@ feed = Blueprint('feed', __name__, url_prefix='/feed')
 def index(page, service: FeedService):
     feed_posts, pagination_params = service.fetch_feed(current_user.id, int(page))
 
+    if request.args.get('json'):
+        return {
+            'list': feed_posts,
+            'pagination': pagination_params,
+        }
+
     return render_template(
         'feed.html',
         list=feed_posts,
