@@ -25,6 +25,18 @@ services:
     depends_on:
       - db
 
+  socketio:
+    build: ./socketio
+    env_file:
+      - .env
+    volumes:
+      - ./socketio:/socketio
+    ports:
+      - 8000:8000
+    depends_on:
+      - monolith
+      - db
+
   celery:
     build: ./monolith
     command: celery worker -A task.worker.celery --loglevel=info
