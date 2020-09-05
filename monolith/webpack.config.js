@@ -3,7 +3,8 @@ const PATHS = {
     app: path.resolve(__dirname, 'app/static/js'),
     build: path.resolve(__dirname, 'app/static/build')
 };
-const VueLoaderPlugin = require('vue-loader/lib/plugin')
+const VueLoaderPlugin = require('vue-loader/lib/plugin');
+const Dotenv = require('dotenv-webpack');
 
 module.exports = {
     entry: {
@@ -55,6 +56,10 @@ module.exports = {
         ],
     },
     plugins: [
+        new Dotenv({
+            safe: false,
+            systemvars: true
+        }),
         new VueLoaderPlugin()
     ]
 };
