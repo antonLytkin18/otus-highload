@@ -38,5 +38,4 @@ def process_follower_feed(follower_id, post_id):
     )
     repository.save(feed)
     service.fetch_feed.invalidate_all(follower_id)
-
     io.connection.emit('feedUpdated', {'userId': follower_id}, room=f'room_{follower_id}')
