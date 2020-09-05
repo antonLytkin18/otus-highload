@@ -5,6 +5,7 @@ from flask import current_app
 from app.db.models import Feed
 from app.db.repositories import UserFollowerRepository, FeedRepository, UserRepository
 from app.feed.services import FeedService
+from app.socketio.socketio import AppSocketIO
 from task import celery
 
 
@@ -25,12 +26,17 @@ def update_followers_feeds(user_id, post_id):
 
 @celery.task
 def process_follower_feed(follower_id, post_id):
-    repository = current_app.injector.get(FeedRepository)
-    service: FeedService = current_app.injector.get(FeedService)
-    feed_post = Feed(
+    injector = current_app.injector
+    repository: FeedRepository = injector.get(FeedRepository)
+    service: FeedService = injector.get(FeedService)
+    io: AppSocketIO = injector.get(AppSocketIO)
+
+    feed = Feed(
         user_id=follower_id,
         post_id=post_id,
         date_create=datetime.now()
     )
-    repository.save(feed_post)
+    repository.save(feed)
     service.fetch_feed.invalidate_all(follower_id)
+
+    io.connection.emit('feedUpdated', {'userId': follower_id}, room=f'room_{follower_id}')
