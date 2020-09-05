@@ -2,7 +2,7 @@
     <div>
         <b-input-group class="mt-3">
             <b-form-input
-                    v-model="message"
+                    v-model="post"
                     @keyup.enter="onPostAdd"
             ></b-form-input>
             <b-input-group-append>
@@ -15,9 +15,9 @@
             </b-input-group-append>
         </b-input-group>
         <hr>
-        <b-alert v-if="!messages.length" show variant="info">There are no news. Add post to be the first</b-alert>
+        <b-alert v-if="!listItems.length" show variant="info">There are no news. Add post to be the first</b-alert>
         <v-feed-post
-                v-for="(item, index) in messages"
+                v-for="(item, index) in listItems"
                 :item="item['post']"
                 follower-url="/"
         ></v-feed-post>
@@ -35,29 +35,48 @@
 <script>
 export default {
     props: {
+        userId: String,
         list: Object | Array,
         feedUrl: String,
         addPostUrl: String,
         pagination: Object,
     },
     mounted: function () {
-        this.messages = this.list;
+        this.listItems = this.list;
     },
     data: () => ({
-        message: '',
-        messages: [],
+        post: '',
+        listItems: [],
     }),
+    sockets: {
+        connect: function () {
+            this.$socket.emit('join', {room: 'room_' + this.userId});
+        },
+        feedUpdated: function (data) {
+            axios
+                .get(this.populateUrl(this.feedUrl, {page: 1}), {
+                    params: {
+                        json: true,
+                    }
+                })
+                .then(response => {
+                    const {data} = response;
+                    this.listItems = data['list'];
+                    this.pagination = data['pagination'];
+                });
+        }
+    },
     methods: {
         onPageChange: function (page) {
             window.open(this.populateUrl(this.feedUrl, {page: page}), '_self');
         },
         onPostAdd: function () {
-            if (!this.message) {
+            if (!this.post) {
                 return;
             }
             axios
                 .post(this.addPostUrl, {
-                    message: this.message,
+                    message: this.post,
                 })
                 .then(response => {
                     const {data} = response;
@@ -69,14 +88,14 @@ export default {
                     if (!message) {
                         return;
                     }
-                    this.messages.unshift({
+                    this.listItems.unshift({
                         'post': message
                     })
                     this.$emit('sent', message);
 
                 })
                 .finally(() => {
-                    this.message = '';
+                    this.post = '';
                 })
         }
     },

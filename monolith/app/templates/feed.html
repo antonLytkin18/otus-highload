@@ -4,6 +4,9 @@
     <h3>Feed</h3>
     <hr>
     <v-feed
+        {% if current_user.is_authenticated %}
+            user-id="{{ current_user.get_id() }}"
+        {% endif %}
         :list="{{ list|tojson_escaped }}"
         feed-url="{{ url_for('feed.index', page=':page') }}"
         add-post-url="{{ url_for('feed.add_post') }}"
