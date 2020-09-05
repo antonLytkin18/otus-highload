@@ -31,3 +31,5 @@ class Config:
 
     CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
     REDIS_CACHE_HOST = os.environ.get('REDIS_CACHE_HOST')
+
+    SOCKETIO_BROKER_URL = os.environ.get('SOCKETIO_BROKER_URL')
