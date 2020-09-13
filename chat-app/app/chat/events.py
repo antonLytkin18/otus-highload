@@ -14,6 +14,7 @@ def register_user(ch, **kwargs):
     payload = json.loads(kwargs.get('body'))
     repository: UserRepository = current_app.injector.get(UserRepository)
     repository.save(User(
+        id=payload['id'],
         name=payload['name'],
         last_name=payload['last_name']
     ))

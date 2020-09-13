@@ -93,9 +93,11 @@ class CommonMysqlRepository(BaseMysqlRepository):
         return int(data[self.count_alias]) if self.count_alias in data else 0
 
     def save(self, model: Model) -> bool:
-        if model.id:
-            return self._update(model)
-        return self._insert(model)
+        if not model.id:
+            return self._insert(model)
+        if not self.find_one(id=model.id):
+            return self._insert(model)
+        return self._update(model)
 
     def _insert(self, model: Model) -> bool:
         data = {k: v for k, v in model.as_dict().items() if v is not None}
