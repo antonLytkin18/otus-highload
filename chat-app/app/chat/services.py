@@ -3,8 +3,8 @@ from datetime import datetime
 
 from injector import inject
 
-from app.db.models import Chat, ChatMessage
-from app.db.repositories import ChatRepository, UserRepository, ChatMessageShardedRepository
+from app.db.models import ChatMessage, User, Chat
+from app.db.repositories import ChatRepository, ChatMessageRepository, UserRepository
 
 
 @dataclass()
@@ -28,8 +28,7 @@ class ChatService:
 
     @inject
     def __init__(self, user_repository: UserRepository, chat_repository: ChatRepository,
-                 chat_message_repository: ChatMessageShardedRepository
-                 ):
+                 chat_message_repository: ChatMessageRepository):
         self.user_repository = user_repository
         self.chat_repository = chat_repository
         self.chat_message_repository = chat_message_repository
@@ -52,7 +51,7 @@ class ChatService:
         chats = self.chat_repository.find_all(from_user_id=user_id) + self.chat_repository.find_all(to_user_id=user_id)
         for chat in chats:
             user_to_id = chat.from_user_id if chat.from_user_id != user_id else chat.to_user_id
-            user_to = self.user_repository.find_one(id=user_to_id)
+            user_to: User = self.user_repository.find_one(id=user_to_id)
             last_message = self.chat_message_repository.find_one(chat_id=chat.id, order_by='ID DESC')
             result.append(ChatDTO(
                 id=chat.id,
@@ -61,7 +60,7 @@ class ChatService:
                 last_message=ChatMessageDTO(
                     message=last_message.message if last_message else '',
                     date_create=last_message.date_create.strftime('%d.%m.%Y, %H:%M') if last_message else ''
-                ),
+                ) if last_message else None,
             ))
 
         return result
@@ -88,7 +87,7 @@ class ChatService:
         users_cached = {}
         messages = self.chat_message_repository.find_all(chat_id=chat_id)
         for message in messages:
-            user = users_cached.get(message.user_id, False)
+            user: User = users_cached.get(message.user_id, False)
             if not user:
                 user = self.user_repository.find_one(id=message.user_id)
                 users_cached[user.id] = user
