@@ -1,0 +1,12 @@
+flask
+flask-cors
+flask-wtf
+flask-injector
+flask-jwt
+flask_mysqldb
+alembic
+email_validator
+alembic
+gunicorn
+pika
+blinker

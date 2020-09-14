@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<b-container>
+    <h3>Chat with: {{ follower.last_name }} {{ follower.name }}</h3>
+    <hr>
+    <v-chat-message-list
+            :user-id="{{ user_id }}"
+            follower-url="{{ url_for('follower.index', user_id=':id') }}"
+    ></v-chat-message-list>
+</b-container>
+{% endblock %}

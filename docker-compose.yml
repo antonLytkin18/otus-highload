@@ -2,7 +2,7 @@ version: '3'
 
 services:
   db:
-    build: db
+    build: ./db
     restart: always
     environment:
       MYSQL_USER: ${MYSQL_USER}
@@ -14,16 +14,56 @@ services:
     volumes:
       - ./db/volume:/var/lib/mysql
 
-  monolith:
-    build: ./monolith
+  app:
+    build: ./app
     env_file:
       - .env
     volumes:
-      - ./monolith:/monolith
+      - ./app:/app
     ports:
       - 5000:5000
     depends_on:
+      - rabbitmq
       - db
+
+  chat-db:
+    build: ./chat-db
+    restart: always
+    environment:
+      MYSQL_USER: ${CHAT_APP_MYSQL_USER}
+      MYSQL_PASSWORD: ${CHAT_APP_MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${CHAT_APP_MYSQL_DB}
+      MYSQL_ROOT_PASSWORD: ${CHAT_APP_MYSQL_ROOT_PASSWORD}
+    ports:
+      - 10200:3306
+    volumes:
+      - ./chat-db/volume:/var/lib/mysql
+
+  chat-app:
+    build: ./chat-app
+    environment:
+      FLASK_APP: ${CHAT_APP_FLASK_APP}
+    env_file:
+      - .env
+    volumes:
+      - ./chat-app:/chat-app
+    ports:
+      - 9000:9000
+    depends_on:
+      - app
+      - chat-db
+
+  chat-app-worker:
+    build: ./chat-app
+    environment:
+      FLASK_APP: ${CHAT_APP_FLASK_APP}
+    env_file:
+      - .env
+    command: flask
+    volumes:
+      - ./chat-app:/chat-app
+    depends_on:
+      - chat-app
 
   socketio:
     build: ./socketio
@@ -34,18 +74,18 @@ services:
     ports:
       - 8000:8000
     depends_on:
-      - monolith
+      - app
       - db
 
   celery:
-    build: ./monolith
+    build: ./app
     command: celery worker -A task.worker.celery --loglevel=info
     env_file:
       - .env
     volumes:
-      - ./monolith:/monolith
+      - ./app:/app
     depends_on:
-      - monolith
+      - app
       - db
 
   tarantool:
