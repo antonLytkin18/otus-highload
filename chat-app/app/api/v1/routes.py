@@ -11,10 +11,6 @@ from app.chat.services import ChatService
 v1 = Blueprint('auth', __name__, url_prefix='/api/v1')
 
 
-def identity(payload):
-    return payload['identity']
-
-
 @inject
 @v1.route('/chats', methods=['GET'])
 @cross_origin()
