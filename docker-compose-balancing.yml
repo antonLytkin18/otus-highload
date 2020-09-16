@@ -1,0 +1,92 @@
+version: '3'
+
+services:
+  db:
+    build: ./db
+    restart: always
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - 10100:3306
+    volumes:
+      - ./db/volume:/var/lib/mysql
+
+  db-slave:
+    build: db-slave
+    restart: always
+    environment:
+      MYSQL_USER: ${SLAVE_MYSQL_USER}
+      MYSQL_PASSWORD: ${SLAVE_MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${SLAVE_MYSQL_DB}
+      MYSQL_ROOT_PASSWORD: ${SLAVE_MYSQL_ROOT_PASSWORD}
+    ports:
+      - 10101:3306
+    volumes:
+      - ./db-slave/volume:/var/lib/mysql
+    depends_on:
+      - db
+
+  db-slave-1:
+    build: db-slave-1
+    restart: always
+    environment:
+      MYSQL_USER: ${SLAVE_MYSQL_USER}
+      MYSQL_PASSWORD: ${SLAVE_MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${SLAVE_MYSQL_DB}
+      MYSQL_ROOT_PASSWORD: ${SLAVE_MYSQL_ROOT_PASSWORD}
+    ports:
+      - 10102:3306
+    volumes:
+      - ./db-slave-1/volume:/var/lib/mysql
+    depends_on:
+      - db
+
+  haproxy:
+    image: haproxy:2.2.2
+    environment:
+      BACKEND_1: db-slave:3306
+      BACKEND_2: db-slave-1:3306
+    volumes:
+      - ./tcp-haproxy/conf:/usr/local/etc/haproxy
+    ports:
+      - 10103:3307
+      - 8081:81
+    depends_on:
+      - db-slave
+      - db-slave-1
+
+  app:
+    build: ./app
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app
+    ports:
+      - 5000:5000
+    depends_on:
+      - db
+
+  app-2:
+    build: ./app
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app
+    ports:
+      - 5001:5000
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:1.19.2
+    volumes:
+      - ./http-nginx/conf/nginx.conf:/etc/nginx/nginx.conf
+      - ./http-nginx/logs:/etc/nginx/logs
+    ports:
+      - 8080:80
+    depends_on:
+      - app
+      - app-2
