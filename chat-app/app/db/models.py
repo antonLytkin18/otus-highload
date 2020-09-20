@@ -50,3 +50,25 @@ class ChatMessage(Model):
     chat_id: int = None
     message: str = None
     date_create: DateTimeType = None
+
+
+@dataclass()
+class ChatMessageStatus(Model):
+    STATUS_NOT_READ = 1
+    STATUS_READ = 2
+
+    id: int = None
+    user_id: int = None
+    chat_message_id: int = None
+    status: int = None
+    date_create: DateTimeType = None
+
+    @property
+    def is_read(self):
+        return int(self.status) == self.STATUS_READ
+
+    def set_read_status(self):
+        self.status = self.STATUS_READ
+
+    def set_not_read_status(self):
+        self.status = self.STATUS_NOT_READ
