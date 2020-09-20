@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from injector import inject
 
 from app.db.db import Db
-from app.db.models import Model, Chat, ChatMessage, User
+from app.db.models import Model, User, Chat, ChatMessage, ChatMessageStatus
 from app.db.utils import Pagination
 
 
@@ -134,3 +134,8 @@ class ChatRepository(CommonMysqlRepository):
 class ChatMessageRepository(CommonMysqlRepository):
     table_name = 'chat_message'
     model_class = ChatMessage
+
+
+class ChatMessageStatusRepository(CommonMysqlRepository):
+    table_name = 'chat_message_status'
+    model_class = ChatMessageStatus
