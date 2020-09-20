@@ -6,7 +6,7 @@ from flask import current_app
 
 from app.chat.gateways import CounterAppGateway
 from app.db.models import User, ChatMessage, ChatMessageStatus
-from app.db.repositories import UserRepository
+from app.db.repositories import UserRepository, ChatMessageStatusRepository
 
 user_registered = signal('user-registered')
 chat_message_added = signal('chat-message-added')
@@ -28,7 +28,7 @@ def register_user(ch, **kwargs):
 def set_not_read_message_status(chat_service, **kwargs):
     counter_gateway: CounterAppGateway = kwargs.get('counter_gateway')
     chat_message: ChatMessage = kwargs.get('chat_message')
-    chat_message_status_repository = kwargs.get('chat_message_status_repository')
+    chat_message_status_repository: ChatMessageStatusRepository = kwargs.get('chat_message_status_repository')
 
     for user_id in chat_service.find_participants(chat_message):
         chat_message_status = chat_message_status_repository.model_class(
@@ -49,7 +49,7 @@ def set_read_message_status(chat_service, **kwargs):
     counter_gateway: CounterAppGateway = kwargs.get('counter_gateway')
     chat_message: ChatMessage = kwargs.get('chat_message')
     chat_message_status: ChatMessageStatus = kwargs.get('chat_message_status')
-    chat_message_status_repository = kwargs.get('chat_message_status_repository')
+    chat_message_status_repository: ChatMessageStatusRepository = kwargs.get('chat_message_status_repository')
 
     if not counter_gateway.decr(chat_message.chat_id, chat_message_status.user_id):
         chat_message_status.set_not_read_status()
