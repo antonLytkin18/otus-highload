@@ -2,6 +2,8 @@ from injector import singleton
 
 from app.auth.services import RegistrationService
 from app.broker.broker import AppBroker
+from app.consul import consul
+from app.consul.services import ServiceDiscovery
 from app.db.db import DbConnectionPool, Db, SlaveDb, ChatShardedDb, TarantoolDb, RedisDb
 from app.feed.services import FeedService
 from app.follower.services import FollowerService
@@ -29,3 +31,4 @@ def configure(binder):
     binder.bind(UserTarantoolRepository, scope=singleton)
     binder.bind(AppSocketIO, scope=singleton)
     binder.bind(AppBroker, scope=singleton)
+    binder.bind(ServiceDiscovery, to=ServiceDiscovery(consul=consul), scope=singleton)

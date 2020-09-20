@@ -15,3 +15,4 @@ celery
 blinker
 flask-socketio
 pika
+flask-consulate

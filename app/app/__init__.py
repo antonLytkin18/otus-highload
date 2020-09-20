@@ -5,6 +5,7 @@ from app.auth.views import auth, login_manager
 from app.broker.broker import AppBroker
 from app.cmd.user import user_cmd
 from app.config import Config
+from app.consul import consul
 from app.db.db import DbConnectionPool
 from app.dependencies import configure
 from app.chat.views import chat
@@ -28,6 +29,7 @@ def create_app():
     jwt.init_app(app)
     broker: AppBroker = app.injector.get(AppBroker)
     broker.init_app(app)
+    consul.init_app(app)
 
     return app
 
