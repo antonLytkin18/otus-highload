@@ -6,7 +6,7 @@ flask-jwt
 flask_mysqldb
 alembic
 email_validator
-alembic
 gunicorn
 pika
 blinker
+requests
