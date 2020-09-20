@@ -69,7 +69,14 @@
                             let container = this.$refs.container;
                             container.scrollTop = container.scrollHeight;
                         });
+                        this.messages
+                            .filter(message => !message['is_read'])
+                            .forEach(this.markMessageAsRead);
                     })
+            },
+            markMessageAsRead: function (message) {
+                this.makeChatAppRequest('post', '/api/v1/messages/' + message['id'] + '/read')
+                    .then(response => {})
             },
             onSend: function (e) {
                 if (!this.message) {
