@@ -8,7 +8,7 @@ from injector import inject
 from app.chat.forms import ChatMessageForm, ChatForm
 from app.chat.services import ChatService
 
-v1 = Blueprint('auth', __name__, url_prefix='/api/v1')
+v1 = Blueprint('v1', __name__, url_prefix='/api/v1')
 
 
 @inject
@@ -80,4 +80,18 @@ def add_message(chat_id, service: ChatService):
         'success': True,
         'errors': [],
         'item': asdict(message)
+    }
+
+
+@inject
+@v1.route('messages/<message_id>/read', methods=['POST'])
+@cross_origin()
+@jwt_required()
+def read_message(message_id, service: ChatService):
+
+    service.read_message(message_id, current_identity)
+
+    return {
+        'success': True,
+        'errors': [],
     }
