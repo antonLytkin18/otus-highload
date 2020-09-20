@@ -34,6 +34,12 @@
                     </small>
                 </div>
 
+                <b-badge
+                        v-if="item['unread_messages_count']"
+                        class="float-right"
+                        variant="danger"
+                >{{ item['unread_messages_count'] }}</b-badge>
+
                 <p
                     v-if="item['last_message']"
                     class="mb-1 text-muted"
