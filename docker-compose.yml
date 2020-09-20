@@ -48,7 +48,23 @@ services:
     volumes:
       - ./chat-app:/chat-app
     ports:
-      - 9000:9000
+      - 9000:5000
+    depends_on:
+      - app
+      - chat-db
+
+  chat-app-2:
+    build: ./chat-app
+    environment:
+      FLASK_APP: ${CHAT_APP_FLASK_APP}
+      CHAT_APP_URL: ${CHAT_APP_URL_2}
+      CHAT_APP_HOST: ${CHAT_APP_HOST_2}
+    env_file:
+      - .env
+    volumes:
+      - ./chat-app:/chat-app
+    ports:
+      - 9200:5000
     depends_on:
       - app
       - chat-db
@@ -141,3 +157,8 @@ services:
       - 5672:5672
     volumes:
       - ./rabbitmq/volume:/var/lib/rabbitmq
+
+  consul:
+    image: consul
+    ports:
+      - 8500:8500
