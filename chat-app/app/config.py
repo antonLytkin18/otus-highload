@@ -14,5 +14,7 @@ class Config:
     MYSQL_PASSWORD = os.environ.get('CHAT_APP_MYSQL_PASSWORD')
     MYSQL_DB = os.environ.get('CHAT_APP_MYSQL_DB')
 
+    COUNTER_APP_URL = os.environ.get('COUNTER_APP_URL')
+
     MAIN_BROKER_URL = os.environ.get('MAIN_BROKER_URL')
 
