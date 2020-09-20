@@ -1,0 +1,2 @@
+class GatewayEndpointNotFoundException(Exception):
+    pass
