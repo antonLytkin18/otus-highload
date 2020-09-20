@@ -1,4 +1,3 @@
-import flask_redis
 from flask import Flask
 from flask_injector import FlaskInjector
 
