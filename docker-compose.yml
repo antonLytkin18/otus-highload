@@ -53,6 +53,17 @@ services:
       - app
       - chat-db
 
+  counter-app:
+    build: ./counter-app
+    env_file:
+      - .env
+    volumes:
+      - ./counter-app:/counter-app
+    ports:
+      - 9100:5000
+    depends_on:
+      - chat-app
+
   chat-app-worker:
     build: ./chat-app
     environment:
