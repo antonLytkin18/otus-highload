@@ -1,0 +1,7 @@
+flask
+flask-wtf
+flask-injector
+flask-jwt
+gunicorn
+blinker
+redis
