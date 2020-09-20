@@ -10,3 +10,4 @@ gunicorn
 pika
 blinker
 requests
+flask-consulate

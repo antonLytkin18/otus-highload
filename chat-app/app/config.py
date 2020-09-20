@@ -18,3 +18,7 @@ class Config:
 
     MAIN_BROKER_URL = os.environ.get('MAIN_BROKER_URL')
 
+    CHAT_APP_URL = os.environ.get('CHAT_APP_URL')
+    CHAT_APP_HOST = os.environ.get('CHAT_APP_HOST')
+    CHAT_APP_PORT = os.environ.get('CHAT_APP_PORT')
+
