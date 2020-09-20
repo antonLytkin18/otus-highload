@@ -60,16 +60,17 @@
 
 <script>
     export default {
+        props: {
+            followerList: Object | Array,
+            chatMessageListUrl: String,
+            chatAppUrl: String,
+        },
         mounted() {
-            this.makeChatAppRequest('get', '/api/v1/chats')
+            this.makeChatAppRequest('get', '/api/v1/chats', {}, this.chatAppUrl)
                 .then(response => {
                     const {data} = response;
                     this.chatList = data['list'];
                 });
-        },
-        props: {
-            followerList: Object | Array,
-            chatMessageListUrl: String,
         },
         data: () => ({
             chatList: {},

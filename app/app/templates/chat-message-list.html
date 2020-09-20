@@ -6,6 +6,7 @@
     <v-chat-message-list
             :user-id="{{ user_id }}"
             follower-url="{{ url_for('follower.index', user_id=':id') }}"
+            chat-app-url="{{ chat_app_url }}"
     ></v-chat-message-list>
 </b-container>
 {% endblock %}

@@ -6,6 +6,7 @@
     <v-chat-list
             :follower-list="{{ follower_list|tojson_escaped }}"
             chat-message-list-url="{{ url_for('chat.message_list', user_id=':id') }}"
+            chat-app-url="{{ chat_app_url }}"
     ></v-chat-list>
 </b-container>
 {% endblock %}

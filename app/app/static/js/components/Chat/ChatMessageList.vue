@@ -39,12 +39,13 @@
         props: {
             userId: String,
             followerUrl: String,
+            chatAppUrl: String,
         },
         mounted: function () {
             this
                 .makeChatAppRequest('post', '/api/v1/chats', {
                     user_id: this.userId,
-                })
+                }, this.chatAppUrl)
                 .then(response => {
                     const {data} = response;
                     this.chatId = data['item']['id'];
@@ -59,7 +60,7 @@
         }),
         methods: {
             fillMessages: function () {
-                this.makeChatAppRequest('get', '/api/v1/chats/' + this.chatId + '/messages')
+                this.makeChatAppRequest('get', '/api/v1/chats/' + this.chatId + '/messages', {}, this.chatAppUrl)
                     .then(response => {
                         const {data} = response;
                         this.messages = data['list'];
@@ -75,7 +76,7 @@
                     })
             },
             markMessageAsRead: function (message) {
-                this.makeChatAppRequest('post', '/api/v1/messages/' + message['id'] + '/read')
+                this.makeChatAppRequest('post', '/api/v1/messages/' + message['id'] + '/read', {}, this.chatAppUrl)
                     .then(response => {})
             },
             onSend: function (e) {
@@ -84,7 +85,7 @@
                 }
                 this.makeChatAppRequest('post', '/api/v1/chats/' + this.chatId + '/messages', {
                         message: this.message,
-                    })
+                    }, this.chatAppUrl)
                     .then(response => {
                         const {data} = response;
                         if (!data['success']) {

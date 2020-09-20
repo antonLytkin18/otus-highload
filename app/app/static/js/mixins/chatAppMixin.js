@@ -3,11 +3,11 @@ let chatAppMixin = {
         chatAppUrl: process.env.CHAT_APP_URL,
     }),
     methods: {
-        makeChatAppRequest: function (method, path, data) {
+        makeChatAppRequest: function (method, path, data, url) {
             path = path ? path : ''
             return axios
                 .request({
-                    url: this.chatAppUrl + path,
+                    url: url ? url + path : this.chatAppUrl + path,
                     method: method,
                     headers: {
                         'Authorization': 'JWT ' + this.$cookies.get('auth_token'),
