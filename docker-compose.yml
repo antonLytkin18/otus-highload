@@ -162,3 +162,97 @@ services:
     image: consul
     ports:
       - 8500:8500
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus/conf:/etc/prometheus
+      - ./prometheus/volumes:/data
+    command:
+      - '--config.file=/etc/prometheus/config.yml'
+      - '--storage.tsdb.path=/data'
+    depends_on:
+      - chat-app
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - ./grafana/volume:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+    depends_on:
+      - prometheus
+    ports:
+      - 3000:3000
+
+  zabbix-mysql:
+    image: mysql:5.7
+    command: ['mysqld', '--character-set-server=utf8', '--collation-server=utf8_bin']
+    environment:
+      MYSQL_USER: ${ZABBIX_MYSQL_USER}
+      MYSQL_PASSWORD: ${ZABBIX_MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${ZABBIX_MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${ZABBIX_MYSQL_PASSWORD}
+    ports:
+      - 4406:3306
+    volumes:
+      - ./zabbix/mysql/data:/var/lib/mysql
+
+  zabbix-server:
+    image: zabbix/zabbix-server-mysql:alpine-5.0-latest
+    environment:
+      DB_SERVER_HOST: zabbix-mysql
+      MYSQL_DATABASE: ${ZABBIX_MYSQL_DATABASE}
+      MYSQL_USER: ${ZABBIX_MYSQL_USER}
+      MYSQL_PASSWORD: ${ZABBIX_MYSQL_PASSWORD}
+    ports:
+      - 10051:10051
+    volumes:
+      - ./zabbix/server:/usr/lib/zabbix
+    links:
+      - zabbix-mysql
+    depends_on:
+      - zabbix-mysql
+
+  zabbix-web:
+    restart: always
+    image: zabbix/zabbix-web-nginx-mysql:alpine-5.0-latest
+    links:
+      - zabbix-mysql
+      - zabbix-server
+    depends_on:
+      - zabbix-mysql
+      - zabbix-server
+    environment:
+      DB_SERVER_HOST: zabbix-mysql
+      DB_SERVER_PORT: 3306
+      MYSQL_DATABASE: ${ZABBIX_MYSQL_DATABASE}
+      MYSQL_USER: ${ZABBIX_MYSQL_USER}
+      MYSQL_PASSWORD: ${ZABBIX_MYSQL_PASSWORD}
+      ZBX_SERVER_HOST: zabbix-server
+      ZBX_SERVER_PORT: 10051
+      PHP_TZ: Europe/Moscow
+    ports:
+      - 8080:8080
+
+  zabbix-agent:
+    image: digiapulssi/docker-zabbix-agent
+    environment:
+      ZBX_HOSTNAME: zabbix-agent
+      HOST: zabbix-agent
+      ZABBIX_SERVER: zabbix-server
+      ZBX_SERVER_PORT: 10051
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /dev:/host/dev:ro
+      - /etc:/host/etc:ro
+      - /var/run/docker.sock:/host/var/run/docker.sock
+    ports:
+      - 10050:10050
+    links:
+      - zabbix-server
+    privileged: true
