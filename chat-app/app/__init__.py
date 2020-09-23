@@ -10,6 +10,7 @@ from app.consul.routes import healthcheck
 from app.db.db import DbConnectionPool
 from app.dependencies import configure
 from app.jwt.jwt import jwt
+from app.prometheus.prometheus import metrics
 
 
 def create_app():
@@ -22,6 +23,7 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     init_consul(app)
+    metrics.init_app(app)
 
     return app
 

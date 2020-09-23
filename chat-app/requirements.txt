@@ -11,3 +11,4 @@ pika
 blinker
 requests
 flask-consulate
+prometheus-flask-exporter
