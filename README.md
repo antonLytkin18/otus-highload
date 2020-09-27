@@ -1,12 +1,14 @@
 # Social Network
 
+## Architecture
+
 ![](img/architecture.png)  
 
-## Run
+## Run and apply migrations
 ````shell script
 $ cp .env.exapmple .env
 $ docker-compose up -d
-$ docker-compose exec monolith alembic upgrade head
+$ docker-compose exec app alembic upgrade head
 ````
 
 ## Deploy to GCP
@@ -16,8 +18,8 @@ $ docker-machine create --driver google \
      --google-machine-image https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/family/ubuntu-1604-lts \
      --google-machine-type n1-standard-8 \
      --google-zone europe-west1-b \
-     monolith
-$ eval $(docker-machine env monolith)
+     app
+$ eval $(docker-machine env app)
 $ docker-compose up -d
 ````
 
@@ -38,13 +40,13 @@ $ export GOOGLE_PROJECT=[name]
 $ docker-machine create --driver google \
      --google-machine-image https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/family/ubuntu-1604-lts \
      --google-machine-type n1-standard-2 \
-     monolith-db-slave
-$ eval $(docker-machine env monolith-db-slave)
+     app-db-slave
+$ eval $(docker-machine env app-db-slave)
 ````
 
 Open MySql port by adding firewall rule:
 ````shell script
-$ gcloud compute firewall-rules create monolith-db-slave \
+$ gcloud compute firewall-rules create app-db-slave \
      --allow tcp:10101 \
      --target-tags=docker-machine \
      --description="Allow DB slave connections" \
