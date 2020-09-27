@@ -1,5 +1,7 @@
 # Social Network
 
+![](img/architecture.png)  
+
 ## Run
 ````shell script
 $ cp .env.exapmple .env
